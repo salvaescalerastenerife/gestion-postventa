@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Gestión Postventa</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">GP</div>
+      <div>
+        <div class="title">Gestión Postventa</div>
+        <div class="subtitle">Backoffice · Oliver</div>
+      </div>
+    </div>
+    <div class="status" id="status-pill">Listo</div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="dashboard" role="tab">Dashboard</button>
+    <button class="tab" data-tab="import" role="tab">Importar</button>
+    <button class="tab" data-tab="clients" role="tab">Clientes</button>
+    <button class="tab" data-tab="interventions" role="tab">Intervenciones</button>
+    <button class="tab" data-tab="export" role="tab">Exportar</button>
+    <button class="tab" data-tab="backup" role="tab">Backup</button>
+  </nav>
+
+  <main id="app" class="app" role="main"></main>
+
+  <footer class="footer">
+    <span id="footer-meta">—</span>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
