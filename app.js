@@ -3,6 +3,7 @@ import { viewDashboard } from './views/dashboard.js';
 import { viewImport } from './views/import.js';
 import { viewClients } from './views/clients.js';
 import { viewInterventions } from './views/interventions.js';
+import { viewReports } from './views/reports.js';
 import { viewExport } from './views/export.js';
 import { viewBackup } from './views/backup.js';
 
@@ -15,8 +16,9 @@ const VIEWS = {
   import: viewImport,
   clients: viewClients,
   interventions: viewInterventions,
+  reports: viewReports,
   export: viewExport,
-  backup: viewBackup
+  backup: viewBackup,
 };
 
 export const state = {
