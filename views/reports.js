@@ -1,3 +1,6 @@
+import { dbInterventionsSearch } from '../db.js';
+import { centsToEUR } from '../parser.js';
+
 export async function viewReports(root, { setStatus }) {
   setStatus('Cargando informes…');
 
@@ -7,7 +10,18 @@ export async function viewReports(root, { setStatus }) {
         <div class="spread">
           <div>
             <h2>Informes</h2>
-            <div class="muted">Consulta totales facturados por intervención.</div>
+            <div class="muted">Totales facturados por intervención dentro del rango seleccionado.</div>
+          </div>
+          <div class="row">
+            <input class="input" id="from" type="date" />
+            <input class="input" id="to" type="date" />
+            <select class="input" id="type">
+              <option value="">Tipo (todos)</option>
+              <option value="INSTALACION">INSTALACION</option>
+              <option value="REPARACION">REPARACION</option>
+              <option value="MANTENIMIENTO">MANTENIMIENTO</option>
+            </select>
+            <button class="btn primary" id="run">Generar</button>
           </div>
         </div>
       </section>
@@ -24,7 +38,7 @@ export async function viewReports(root, { setStatus }) {
         <div class="kpi">
           <div class="label">Instalación</div>
           <div class="value" id="kInst">0,00 €</div>
-          <div class="small">Solo INSTALACION</div>
+          <div class="small" id="kInstN">0 intervenciones</div>
         </div>
       </section>
 
@@ -32,7 +46,7 @@ export async function viewReports(root, { setStatus }) {
         <div class="kpi">
           <div class="label">Reparación</div>
           <div class="value" id="kRep">0,00 €</div>
-          <div class="small">Solo REPARACION</div>
+          <div class="small" id="kRepN">0 intervenciones</div>
         </div>
       </section>
 
@@ -40,38 +54,11 @@ export async function viewReports(root, { setStatus }) {
         <div class="kpi">
           <div class="label">Mantenimiento</div>
           <div class="value" id="kMant">0,00 €</div>
-          <div class="small">Solo MANTENIMIENTO</div>
+          <div class="small" id="kMantN">0 intervenciones</div>
         </div>
       </section>
 
       <section class="card">
-        <h2>Filtros</h2>
-        <div class="row" style="gap:10px; flex-wrap:wrap; margin-top:10px;">
-          <div>
-            <label class="small">Desde</label>
-            <input class="input" type="date" id="rDesde">
-          </div>
-          <div>
-            <label class="small">Hasta</label>
-            <input class="input" type="date" id="rHasta">
-          </div>
-          <div>
-            <label class="small">Tipo</label>
-            <select class="input" id="rTipo">
-              <option value="">Todas</option>
-              <option value="INSTALACION">Instalación</option>
-              <option value="REPARACION">Reparación</option>
-              <option value="MANTENIMIENTO">Mantenimiento</option>
-            </select>
-          </div>
-          <div style="display:flex; align-items:end;">
-            <button class="btn-primary" id="btnGenerar" type="button">Generar informe</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>Detalle</h2>
         <table class="table">
           <thead>
             <tr>
@@ -80,13 +67,86 @@ export async function viewReports(root, { setStatus }) {
               <th>Total</th>
             </tr>
           </thead>
-          <tbody id="rTabla">
-            <tr><td colspan="3" class="small">Pulsa “Generar informe”.</td></tr>
-          </tbody>
+          <tbody id="rows"></tbody>
         </table>
       </section>
     </div>
   `;
 
-  setStatus('Listo', 'good');
+  const rows = root.querySelector('#rows');
+  const run = root.querySelector('#run');
+
+  const kTotal = root.querySelector('#kTotal');
+  const kInst = root.querySelector('#kInst');
+  const kRep = root.querySelector('#kRep');
+  const kMant = root.querySelector('#kMant');
+
+  const kInstN = root.querySelector('#kInstN');
+  const kRepN = root.querySelector('#kRepN');
+  const kMantN = root.querySelector('#kMantN');
+
+  async function paint() {
+    setStatus('Calculando informe…');
+
+    const from = root.querySelector('#from').value || null;
+    const to = root.querySelector('#to').value || null;
+    const type = root.querySelector('#type').value || null;
+
+    const list = await dbInterventionsSearch({
+      client: null,
+      from,
+      to,
+      type
+    });
+
+    const resumen = {
+      INSTALACION: { total_cents: 0, count: 0 },
+      REPARACION: { total_cents: 0, count: 0 },
+      MANTENIMIENTO: { total_cents: 0, count: 0 },
+    };
+
+    for (const it of list) {
+      const key = it.type;
+      if (!resumen[key]) continue;
+      resumen[key].count += 1;
+      resumen[key].total_cents += Number(it.total_cents || 0);
+    }
+
+    const totalGeneral =
+      resumen.INSTALACION.total_cents +
+      resumen.REPARACION.total_cents +
+      resumen.MANTENIMIENTO.total_cents;
+
+    kTotal.textContent = centsToEUR(totalGeneral);
+    kInst.textContent = centsToEUR(resumen.INSTALACION.total_cents);
+    kRep.textContent = centsToEUR(resumen.REPARACION.total_cents);
+    kMant.textContent = centsToEUR(resumen.MANTENIMIENTO.total_cents);
+
+    kInstN.textContent = `${resumen.INSTALACION.count} intervenciones`;
+    kRepN.textContent = `${resumen.REPARACION.count} intervenciones`;
+    kMantN.textContent = `${resumen.MANTENIMIENTO.count} intervenciones`;
+
+    rows.innerHTML = `
+      <tr>
+        <td>INSTALACION</td>
+        <td>${resumen.INSTALACION.count}</td>
+        <td>${centsToEUR(resumen.INSTALACION.total_cents)}</td>
+      </tr>
+      <tr>
+        <td>REPARACION</td>
+        <td>${resumen.REPARACION.count}</td>
+        <td>${centsToEUR(resumen.REPARACION.total_cents)}</td>
+      </tr>
+      <tr>
+        <td>MANTENIMIENTO</td>
+        <td>${resumen.MANTENIMIENTO.count}</td>
+        <td>${centsToEUR(resumen.MANTENIMIENTO.total_cents)}</td>
+      </tr>
+    `;
+
+    setStatus(`Listo · ${list.length} intervención(es) analizadas`, 'good');
+  }
+
+  run.addEventListener('click', paint);
+  await paint();
 }
