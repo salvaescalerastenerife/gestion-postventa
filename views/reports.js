@@ -1,47 +1,92 @@
-export async function viewReports(appEl) {
-  appEl.innerHTML = `
-    <div class="card">
-      <h2>Informes de facturación</h2>
+export async function viewReports(root, { setStatus }) {
+  setStatus('Cargando informes…');
 
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
-        <input type="date" id="rDesde">
-        <input type="date" id="rHasta">
+  root.innerHTML = `
+    <div class="grid">
+      <section class="card">
+        <div class="spread">
+          <div>
+            <h2>Informes</h2>
+            <div class="muted">Consulta totales facturados por intervención.</div>
+          </div>
+        </div>
+      </section>
 
-        <select id="rTipo">
-          <option value="">Todas</option>
-          <option value="instalacion">Instalación</option>
-          <option value="reparacion">Reparación</option>
-          <option value="mantenimiento">Mantenimiento</option>
-        </select>
+      <section class="card span4">
+        <div class="kpi">
+          <div class="label">Total general</div>
+          <div class="value" id="kTotal">0,00 €</div>
+          <div class="small">Rango seleccionado</div>
+        </div>
+      </section>
 
-        <button id="btnGenerar">Generar</button>
-      </div>
-    </div>
+      <section class="card span4">
+        <div class="kpi">
+          <div class="label">Instalación</div>
+          <div class="value" id="kInst">0,00 €</div>
+          <div class="small">Solo INSTALACION</div>
+        </div>
+      </section>
 
-    <div class="card" style="margin-top:12px;">
-      <h3>Resumen</h3>
+      <section class="card span4">
+        <div class="kpi">
+          <div class="label">Reparación</div>
+          <div class="value" id="kRep">0,00 €</div>
+          <div class="small">Solo REPARACION</div>
+        </div>
+      </section>
 
-      <div style="display:grid; gap:8px; margin-top:10px;">
-        <div>Total: <strong id="kTotal">0 €</strong></div>
-        <div>Instalación: <strong id="kInst">0 €</strong></div>
-        <div>Reparación: <strong id="kRep">0 €</strong></div>
-        <div>Mantenimiento: <strong id="kMant">0 €</strong></div>
-      </div>
-    </div>
+      <section class="card span4">
+        <div class="kpi">
+          <div class="label">Mantenimiento</div>
+          <div class="value" id="kMant">0,00 €</div>
+          <div class="small">Solo MANTENIMIENTO</div>
+        </div>
+      </section>
 
-    <div class="card" style="margin-top:12px;">
-      <h3>Detalle</h3>
+      <section class="card">
+        <h2>Filtros</h2>
+        <div class="row" style="gap:10px; flex-wrap:wrap; margin-top:10px;">
+          <div>
+            <label class="small">Desde</label>
+            <input class="input" type="date" id="rDesde">
+          </div>
+          <div>
+            <label class="small">Hasta</label>
+            <input class="input" type="date" id="rHasta">
+          </div>
+          <div>
+            <label class="small">Tipo</label>
+            <select class="input" id="rTipo">
+              <option value="">Todas</option>
+              <option value="INSTALACION">Instalación</option>
+              <option value="REPARACION">Reparación</option>
+              <option value="MANTENIMIENTO">Mantenimiento</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:end;">
+            <button class="btn-primary" id="btnGenerar" type="button">Generar informe</button>
+          </div>
+        </div>
+      </section>
 
-      <table style="width:100%; margin-top:10px;">
-        <thead>
-          <tr>
-            <th style="text-align:left;">Tipo</th>
-            <th style="text-align:center;">Intervenciones</th>
-            <th style="text-align:right;">Total</th>
-          </tr>
-        </thead>
-        <tbody id="rTabla"></tbody>
-      </table>
+      <section class="card">
+        <h2>Detalle</h2>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Intervenciones</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="rTabla">
+            <tr><td colspan="3" class="small">Pulsa “Generar informe”.</td></tr>
+          </tbody>
+        </table>
+      </section>
     </div>
   `;
+
+  setStatus('Listo', 'good');
 }
