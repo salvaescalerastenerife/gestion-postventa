@@ -13,6 +13,7 @@ export async function viewReports(root, { setStatus }) {
             <div class="muted">Totales facturados por intervención dentro del rango seleccionado.</div>
           </div>
           <div class="row">
+            <input class="input" id="client" placeholder="Cliente contiene…" />
             <input class="input" id="from" type="date" />
             <input class="input" id="to" type="date" />
             <select class="input" id="type">
@@ -65,6 +66,7 @@ export async function viewReports(root, { setStatus }) {
               <th>Tipo</th>
               <th>Intervenciones</th>
               <th>Total</th>
+              <th>% del total</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -88,12 +90,13 @@ export async function viewReports(root, { setStatus }) {
   async function paint() {
     setStatus('Calculando informe…');
 
+    const client = root.querySelector('#client').value.trim() || null;
     const from = root.querySelector('#from').value || null;
     const to = root.querySelector('#to').value || null;
     const type = root.querySelector('#type').value || null;
 
     const list = await dbInterventionsSearch({
-      client: null,
+      client,
       from,
       to,
       type
@@ -126,24 +129,31 @@ export async function viewReports(root, { setStatus }) {
     kRepN.textContent = `${resumen.REPARACION.count} intervenciones`;
     kMantN.textContent = `${resumen.MANTENIMIENTO.count} intervenciones`;
 
+    const pct = (n) => {
+      if (!totalGeneral) return '0 %';
+      return `${((n / totalGeneral) * 100).toFixed(1).replace('.', ',')} %`;
+    };
+
     rows.innerHTML = `
       <tr>
         <td>INSTALACION</td>
         <td>${resumen.INSTALACION.count}</td>
         <td>${centsToEUR(resumen.INSTALACION.total_cents)}</td>
+        <td>${pct(resumen.INSTALACION.total_cents)}</td>
       </tr>
       <tr>
         <td>REPARACION</td>
         <td>${resumen.REPARACION.count}</td>
         <td>${centsToEUR(resumen.REPARACION.total_cents)}</td>
+        <td>${pct(resumen.REPARACION.total_cents)}</td>
       </tr>
       <tr>
         <td>MANTENIMIENTO</td>
         <td>${resumen.MANTENIMIENTO.count}</td>
         <td>${centsToEUR(resumen.MANTENIMIENTO.total_cents)}</td>
+        <td>${pct(resumen.MANTENIMIENTO.total_cents)}</td>
       </tr>
     `;
-
     setStatus(`Listo · ${list.length} intervención(es) analizadas`, 'good');
   }
 
