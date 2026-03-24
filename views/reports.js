@@ -170,8 +170,9 @@ export async function viewReports(root, { setStatus }) {
         <head>
           <title>Informe</title>
           <style>
-            body { font-family: Arial; padding: 20px; }
+            body { font-family: Arial, sans-serif; padding: 20px; }
             h1 { margin-bottom: 10px; }
+            p { margin: 6px 0; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
             th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
             th { background: #f5f5f5; }
@@ -198,10 +199,30 @@ export async function viewReports(root, { setStatus }) {
       </html>
     `;
 
-    const w = window.open('', '_blank');
-    w.document.write(content);
-    w.document.close();
-    w.print();
-  }); 
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(content);
+    doc.close();
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+
+        setTimeout(() => {
+          iframe.remove();
+        }, 1000);
+      }, 300);
+    };
+  });
   await paint();
 }
