@@ -1,5 +1,6 @@
 import { dbInterventionsSearch } from '../db.js';
 import { centsToEUR } from '../parser.js';
+import { jsPDF } from 'jspdf';
 
 export async function viewReports(root, { setStatus }) {
   setStatus('Cargando informes…');
@@ -164,65 +165,80 @@ export async function viewReports(root, { setStatus }) {
   }
 
   run.addEventListener('click', paint);
-  btnPdf?.addEventListener('click', () => {
-    const content = `
-      <html>
-        <head>
-          <title>Informe</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            h1 { margin-bottom: 10px; }
-            p { margin: 6px 0; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-            th { background: #f5f5f5; }
-          </style>
-        </head>
-        <body>
-          <h1>Informe de facturación</h1>
-          <p>Total: ${kTotal.textContent}</p>
+    btnPdf?.addEventListener('click', async () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
-          <table>
-            <thead>
-              <tr>
-                <th>Tipo</th>
-                <th>Intervenciones</th>
-                <th>Total</th>
-                <th>%</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rows.innerHTML}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
+    let y = 18;
 
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.text('Informe de facturación', 14, y);
 
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(content);
-    doc.close();
+    y += 10;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.text(`Total general: ${kTotal.textContent}`, 14, y);
 
-    iframe.onload = () => {
-      setTimeout(() => {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
+    const client = root.querySelector('#client')?.value?.trim() || 'Todos';
+    const from = root.querySelector('#from')?.value || '—';
+    const to = root.querySelector('#to')?.value || '—';
+    const type = root.querySelector('#type')?.value || 'TODOS';
 
-        setTimeout(() => {
-          iframe.remove();
-        }, 1000);
-      }, 300);
-    };
+    y += 8;
+    doc.text(`Cliente: ${client}`, 14, y);
+    y += 6;
+    doc.text(`Desde: ${from}`, 14, y);
+    y += 6;
+    doc.text(`Hasta: ${to}`, 14, y);
+    y += 6;
+    doc.text(`Tipo: ${type}`, 14, y);
+
+    y += 10;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('Tipo', 14, y);
+    doc.text('Intervenciones', 80, y);
+    doc.text('Total', 135, y);
+    doc.text('% del total', 170, y);
+
+    y += 4;
+    doc.line(14, y, 196, y);
+    y += 8;
+
+    const trs = Array.from(rows.querySelectorAll('tr'));
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+
+    trs.forEach((tr) => {
+      const tds = tr.querySelectorAll('td');
+      if (tds.length < 4) return;
+
+      const tipoTxt = (tds[0].textContent || '').trim();
+      const intervenciones = (tds[1].textContent || '').trim();
+      const totalTxt = (tds[2].textContent || '').trim();
+      const pctTxt = (tds[3].textContent || '').trim();
+
+      if (y > 280) {
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.text(tipoTxt, 14, y);
+      doc.text(intervenciones, 80, y);
+      doc.text(totalTxt, 135, y);
+      doc.text(pctTxt, 170, y);
+
+      y += 8;
+    });
+
+    const safeFrom = from === '—' ? 'sin-desde' : from;
+    const safeTo = to === '—' ? 'sin-hasta' : to;
+    const filename = `informe_${safeFrom}_${safeTo}.pdf`;
+
+    doc.save(filename);
   });
   await paint();
 }
