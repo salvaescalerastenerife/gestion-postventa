@@ -60,6 +60,11 @@ export async function viewReports(root, { setStatus }) {
       </section>
 
       <section class="card">
+        <div class="spread" style="margin-bottom:10px;">
+          <h2 style="margin:0;">Detalle</h2>
+          <button class="btn" id="btnPdf" type="button">Exportar PDF</button>
+        </div>
+
         <table class="table">
           <thead>
             <tr>
@@ -77,6 +82,7 @@ export async function viewReports(root, { setStatus }) {
 
   const rows = root.querySelector('#rows');
   const run = root.querySelector('#run');
+  const btnPdf = root.querySelector('#btnPdf');
 
   const kTotal = root.querySelector('#kTotal');
   const kInst = root.querySelector('#kInst');
@@ -158,5 +164,44 @@ export async function viewReports(root, { setStatus }) {
   }
 
   run.addEventListener('click', paint);
+  btnPdf?.addEventListener('click', () => {
+    const content = `
+      <html>
+        <head>
+          <title>Informe</title>
+          <style>
+            body { font-family: Arial; padding: 20px; }
+            h1 { margin-bottom: 10px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+            th { background: #f5f5f5; }
+          </style>
+        </head>
+        <body>
+          <h1>Informe de facturación</h1>
+          <p>Total: ${kTotal.textContent}</p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Intervenciones</th>
+                <th>Total</th>
+                <th>%</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.innerHTML}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const w = window.open('', '_blank');
+    w.document.write(content);
+    w.document.close();
+    w.print();
+  }); 
   await paint();
 }
