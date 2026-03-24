@@ -214,27 +214,7 @@ currentList = list;
     y += 4;
     doc.line(14, y, 196, y);
     y += 8;
-// ===== Totales por técnico =====
-const techTotals = {};
-
-const allRows = Array.from(rows.querySelectorAll('tr'));
-
-allRows.forEach((tr) => {
-  const tipo = tr.querySelectorAll('td')[0]?.textContent?.trim();
-
-  // buscamos las intervenciones reales de ese tipo
-  // (usamos los datos ya calculados en memoria)
-  // mejor reconstruir desde list original → más fiable
-});
-
-// reconstruimos desde datos reales (IMPORTANTE)
-const techMap = {};
-
-const dataRows = Array.from(root.querySelectorAll('#rows tr'));
-
-dataRows.forEach((tr) => {
-  // esto no sirve para técnicos → lo haremos desde list
-});
+    
     const trs = Array.from(rows.querySelectorAll('tr'));
 
     doc.setFont('helvetica', 'normal');
