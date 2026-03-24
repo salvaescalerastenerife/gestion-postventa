@@ -36,6 +36,7 @@ export async function viewDashboard(root, { state, setStatus, dbMetaSet }){
           <div class="row">
             <label class="small">Día</label>
             <select class="input" id="daySel"></select>
+            <button class="btn primary" id="btnApplyDay" type="button">Aplicar</button>
           </div>
         </div>
       </section>
@@ -99,6 +100,8 @@ export async function viewDashboard(root, { state, setStatus, dbMetaSet }){
   `;
 
   const daySel = root.querySelector('#daySel');
+  const btnApplyDay = root.querySelector('#btnApplyDay');
+
   for (const d of dates.slice().reverse()){
     const opt = document.createElement('option');
     opt.value = d;
@@ -106,9 +109,11 @@ export async function viewDashboard(root, { state, setStatus, dbMetaSet }){
     if (d === selected) opt.selected = true;
     daySel.appendChild(opt);
   }
-  daySel.addEventListener('change', ()=>{
+
+  btnApplyDay.addEventListener('click', async () => {
     state.selectedDate = daySel.value;
-    location.hash = '#dashboard';
+    await dbMetaSet('last_selected_date', daySel.value);
+    await viewDashboard(root, { state, setStatus, dbMetaSet });
   });
 
   setStatus('Listo', 'good');
