@@ -1,7 +1,6 @@
 import { dbInterventionsSearch } from '../db.js';
 import { centsToEUR } from '../parser.js';
 
-
 export async function viewReports(root, { setStatus }) {
   setStatus('Cargando informes…');
 
@@ -93,7 +92,9 @@ export async function viewReports(root, { setStatus }) {
   const kInstN = root.querySelector('#kInstN');
   const kRepN = root.querySelector('#kRepN');
   const kMantN = root.querySelector('#kMantN');
-let currentList = [];
+
+  let currentList = [];
+
   async function paint() {
     setStatus('Calculando informe…');
 
@@ -108,7 +109,9 @@ let currentList = [];
       to,
       type
     });
-currentList = list;
+
+    currentList = list;
+
     const resumen = {
       INSTALACION: { total_cents: 0, count: 0 },
       REPARACION: { total_cents: 0, count: 0 },
@@ -161,12 +164,12 @@ currentList = list;
         <td>${pct(resumen.MANTENIMIENTO.total_cents)}</td>
       </tr>
     `;
+
     setStatus(`Listo · ${list.length} intervención(es) analizadas`, 'good');
   }
 
   run.addEventListener('click', paint);
 
-  // exportar pdf
   btnPdf?.addEventListener('click', async () => {
     const jsPDFLib = window.jspdf?.jsPDF;
 
@@ -214,7 +217,7 @@ currentList = list;
     y += 4;
     doc.line(14, y, 196, y);
     y += 8;
-    
+
     const trs = Array.from(rows.querySelectorAll('tr'));
 
     doc.setFont('helvetica', 'normal');
@@ -241,7 +244,7 @@ currentList = list;
 
       y += 8;
     });
-    // ===== Facturación por técnico =====
+
     let yTech = y + 10;
 
     doc.setFont('helvetica', 'bold');
@@ -256,7 +259,7 @@ currentList = list;
     const techTotals = {};
 
     currentList.forEach((it) => {
-      const techs = it.techs_in_part || [];
+      const techs = Array.isArray(it.techs_in_part) ? it.techs_in_part : [];
       const total = Number(it.total_cents || 0);
 
       if (!techs.length) return;
@@ -278,11 +281,13 @@ currentList = list;
       doc.text(`${tech}: ${centsToEUR(total)}`, 14, yTech);
       yTech += 6;
     });
+
     const safeFrom = from === '—' ? 'sin-desde' : from;
     const safeTo = to === '—' ? 'sin-hasta' : to;
     const filename = `informe_${safeFrom}_${safeTo}.pdf`;
 
     doc.save(filename);
   });
+
   await paint();
 }
