@@ -93,7 +93,7 @@ export async function viewReports(root, { setStatus }) {
   const kInstN = root.querySelector('#kInstN');
   const kRepN = root.querySelector('#kRepN');
   const kMantN = root.querySelector('#kMantN');
-
+let currentList = [];
   async function paint() {
     setStatus('Calculando informe…');
 
@@ -108,7 +108,7 @@ export async function viewReports(root, { setStatus }) {
       to,
       type
     });
-
+currentList = list;
     const resumen = {
       INSTALACION: { total_cents: 0, count: 0 },
       REPARACION: { total_cents: 0, count: 0 },
@@ -165,7 +165,9 @@ export async function viewReports(root, { setStatus }) {
   }
 
   run.addEventListener('click', paint);
-    btnPdf?.addEventListener('click', async () => {
+
+  // exportar pdf
+  btnPdf?.addEventListener('click', async () => {
     const jsPDFLib = window.jspdf?.jsPDF;
 
     if (!jsPDFLib) {
@@ -212,7 +214,27 @@ export async function viewReports(root, { setStatus }) {
     y += 4;
     doc.line(14, y, 196, y);
     y += 8;
+// ===== Totales por técnico =====
+const techTotals = {};
 
+const allRows = Array.from(rows.querySelectorAll('tr'));
+
+allRows.forEach((tr) => {
+  const tipo = tr.querySelectorAll('td')[0]?.textContent?.trim();
+
+  // buscamos las intervenciones reales de ese tipo
+  // (usamos los datos ya calculados en memoria)
+  // mejor reconstruir desde list original → más fiable
+});
+
+// reconstruimos desde datos reales (IMPORTANTE)
+const techMap = {};
+
+const dataRows = Array.from(root.querySelectorAll('#rows tr'));
+
+dataRows.forEach((tr) => {
+  // esto no sirve para técnicos → lo haremos desde list
+});
     const trs = Array.from(rows.querySelectorAll('tr'));
 
     doc.setFont('helvetica', 'normal');
@@ -239,7 +261,43 @@ export async function viewReports(root, { setStatus }) {
 
       y += 8;
     });
+    // ===== Facturación por técnico =====
+    let yTech = y + 10;
 
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('Facturación por técnico', 14, yTech);
+
+    yTech += 8;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+
+    const techTotals = {};
+
+    currentList.forEach((it) => {
+      const techs = it.techs_in_part || [];
+      const total = Number(it.total_cents || 0);
+
+      if (!techs.length) return;
+
+      const share = total / techs.length;
+
+      techs.forEach((t) => {
+        if (!techTotals[t]) techTotals[t] = 0;
+        techTotals[t] += share;
+      });
+    });
+
+    Object.entries(techTotals).forEach(([tech, total]) => {
+      if (yTech > 280) {
+        doc.addPage();
+        yTech = 20;
+      }
+
+      doc.text(`${tech}: ${centsToEUR(total)}`, 14, yTech);
+      yTech += 6;
+    });
     const safeFrom = from === '—' ? 'sin-desde' : from;
     const safeTo = to === '—' ? 'sin-hasta' : to;
     const filename = `informe_${safeFrom}_${safeTo}.pdf`;
