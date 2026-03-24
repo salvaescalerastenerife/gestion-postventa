@@ -247,40 +247,55 @@ export async function viewReports(root, { setStatus }) {
 
     let yTech = y + 10;
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('Facturación por técnico', 14, yTech);
-
-    yTech += 8;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-
     const techTotals = {};
 
-    currentList.forEach((it) => {
-      const techs = Array.isArray(it.techs_in_part) ? it.techs_in_part : [];
-      const total = Number(it.total_cents || 0);
+    (Array.isArray(currentList) ? currentList : []).forEach((it) => {
+      const rawTechs = Array.isArray(it?.techs_in_part) ? it.techs_in_part : [];
+      const techs = rawTechs
+        .map(t => String(t || '').trim())
+        .filter(Boolean);
+
+      const total = Number(it?.total_cents || 0);
 
       if (!techs.length) return;
+      if (!Number.isFinite(total) || total <= 0) return;
 
       const share = total / techs.length;
 
       techs.forEach((t) => {
-        if (!techTotals[t]) techTotals[t] = 0;
-        techTotals[t] += share;
+        techTotals[t] = (techTotals[t] || 0) + share;
       });
     });
 
-    Object.entries(techTotals).forEach(([tech, total]) => {
-      if (yTech > 280) {
+    const techEntries = Object.entries(techTotals)
+      .filter(([tech, total]) => tech && Number.isFinite(total))
+      .sort((a, b) => b[1] - a[1]);
+
+    if (techEntries.length) {
+      if (yTech > 270) {
         doc.addPage();
         yTech = 20;
       }
 
-      doc.text(`${tech}: ${centsToEUR(total)}`, 14, yTech);
-      yTech += 6;
-    });
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('Facturación por técnico', 14, yTech);
+
+      yTech += 8;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+
+      techEntries.forEach(([tech, total]) => {
+        if (yTech > 280) {
+          doc.addPage();
+          yTech = 20;
+        }
+
+        doc.text(`${tech}: ${centsToEUR(Math.round(total))}`, 14, yTech);
+        yTech += 6;
+      });
+    }
 
     const safeFrom = from === '—' ? 'sin-desde' : from;
     const safeTo = to === '—' ? 'sin-hasta' : to;
