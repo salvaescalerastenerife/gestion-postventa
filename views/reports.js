@@ -1,6 +1,6 @@
 import { dbInterventionsSearch } from '../db.js';
 import { centsToEUR } from '../parser.js';
-import { jsPDF } from 'jspdf';
+
 
 export async function viewReports(root, { setStatus }) {
   setStatus('Cargando informes…');
