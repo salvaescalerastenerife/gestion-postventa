@@ -166,8 +166,14 @@ export async function viewReports(root, { setStatus }) {
 
   run.addEventListener('click', paint);
     btnPdf?.addEventListener('click', async () => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const jsPDFLib = window.jspdf?.jsPDF;
+
+    if (!jsPDFLib) {
+      alert('Error cargando el generador de PDF. Recarga la app.');
+      return;
+    }
+
+    const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
 
     let y = 18;
 
