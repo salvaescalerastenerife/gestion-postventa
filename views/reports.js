@@ -59,6 +59,30 @@ export async function viewReports(root, { setStatus }) {
         </div>
       </section>
 
+      <section class="card span4">
+        <div class="kpi">
+          <div class="label">Comidas</div>
+          <div class="value" id="kFood">0,00 €</div>
+          <div class="small">Gasto total en alimentación</div>
+        </div>
+      </section>
+
+      <section class="card span4">
+        <div class="kpi">
+          <div class="label">Materiales</div>
+          <div class="value" id="kMaterial">0,00 €</div>
+          <div class="small">Gasto total en materiales</div>
+        </div>
+      </section>
+
+      <section class="card span4">
+        <div class="kpi">
+          <div class="label">Baterías</div>
+          <div class="value" id="kBattery">0,00 €</div>
+          <div class="small">Gasto total en baterías</div>
+        </div>
+      </section>
+
       <section class="card">
         <div class="spread" style="margin-bottom:10px;">
           <h2 style="margin:0;">Detalle</h2>
@@ -93,6 +117,10 @@ export async function viewReports(root, { setStatus }) {
   const kRepN = root.querySelector('#kRepN');
   const kMantN = root.querySelector('#kMantN');
 
+  const kFood = root.querySelector('#kFood');
+  const kMaterial = root.querySelector('#kMaterial');
+  const kBattery = root.querySelector('#kBattery');
+
   let currentList = [];
 
   async function paint() {
@@ -118,11 +146,21 @@ export async function viewReports(root, { setStatus }) {
       MANTENIMIENTO: { total_cents: 0, count: 0 },
     };
 
+    let totalFoodCents = 0;
+    let totalMaterialCents = 0;
+    let totalBatteryCents = 0;
+
     for (const it of list) {
       const key = it.type;
-      if (!resumen[key]) continue;
-      resumen[key].count += 1;
-      resumen[key].total_cents += Number(it.total_cents || 0);
+      if (resumen[key]) {
+        resumen[key].count += 1;
+        resumen[key].total_cents += Number(it.total_cents || 0);
+      }
+
+      const breakdown = it.breakdown_cents || {};
+      totalFoodCents += Number(breakdown.comida || 0);
+      totalMaterialCents += Number(breakdown.material || 0);
+      totalBatteryCents += Number(breakdown.bateria || 0);
     }
 
     const totalGeneral =
@@ -138,6 +176,10 @@ export async function viewReports(root, { setStatus }) {
     kInstN.textContent = `${resumen.INSTALACION.count} intervenciones`;
     kRepN.textContent = `${resumen.REPARACION.count} intervenciones`;
     kMantN.textContent = `${resumen.MANTENIMIENTO.count} intervenciones`;
+
+    kFood.textContent = centsToEUR(totalFoodCents);
+    kMaterial.textContent = centsToEUR(totalMaterialCents);
+    kBattery.textContent = centsToEUR(totalBatteryCents);
 
     const pct = (n) => {
       if (!totalGeneral) return '0 %';
@@ -204,6 +246,13 @@ export async function viewReports(root, { setStatus }) {
     doc.text(`Hasta: ${to}`, 14, y);
     y += 6;
     doc.text(`Tipo: ${type}`, 14, y);
+
+    y += 8;
+    doc.text(`Comidas: ${kFood.textContent}`, 14, y);
+    y += 6;
+    doc.text(`Materiales: ${kMaterial.textContent}`, 14, y);
+    y += 6;
+    doc.text(`Baterías: ${kBattery.textContent}`, 14, y);
 
     y += 10;
 
