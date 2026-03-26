@@ -339,13 +339,28 @@ kBatteryBreakdown.textContent = breakdownText;
     doc.text(`Tipo: ${type}`, 14, y);
 
     y += 8;
-    doc.text(`Comidas: ${kFood.textContent}`, 14, y);
-    y += 6;
-    doc.text(`Materiales: ${kMaterial.textContent}`, 14, y);
-    y += 6;
-    doc.text(`Baterías: ${kBattery.textContent}`, 14, y);
+doc.text(`Comidas: ${kFood.textContent}`, 14, y);
+y += 6;
+doc.text(`Materiales: ${kMaterial.textContent}`, 14, y);
+y += 6;
+doc.text(`Baterías: ${kBattery.textContent}`, 14, y);
+y += 6;
+doc.text(`Unidades baterías: ${String(kBatteryUnits.textContent || '0')}`, 14, y);
 
-    y += 10;
+const batteryBreakdownPdf = String(kBatteryBreakdown.textContent || '—').trim();
+if (batteryBreakdownPdf && batteryBreakdownPdf !== '—') {
+  y += 6;
+
+  const breakdownLines = doc.splitTextToSize(
+    `Desglose baterías: ${batteryBreakdownPdf}`,
+    180
+  );
+
+  doc.text(breakdownLines, 14, y);
+  y += (breakdownLines.length - 1) * 6;
+}
+
+y += 10;
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
