@@ -1,6 +1,58 @@
 import { dbInterventionsSearch } from '../db.js';
 import { centsToEUR } from '../parser.js';
+// --- MAPA DE BATERÍAS (desde app técnicos) ---
+const BATTERY_TYPES = [
+  { cents: 3684, type: '12V 2Amp' },
+  { cents: 7315, type: '12V 9Amp' },
+  { cents: 10810, type: '12V 12Amp' },
+  { cents: 12642, type: '12V 18Amp' }
+];
 
+// --- Resolver combinación exacta de baterías ---
+function resolveBatteryCombination(totalCents) {
+  if (!totalCents || totalCents <= 0) {
+    return { ok: true, units: 0, breakdown: {} };
+  }
+
+  const maxUnits = 6; // límite razonable por intervención
+  let best = null;
+
+  function dfs(idx, remaining, current) {
+    if (remaining === 0) {
+      const totalUnits = Object.values(current).reduce((a, b) => a + b, 0);
+
+      if (!best || totalUnits < best.units) {
+        best = {
+          ok: true,
+          units: totalUnits,
+          breakdown: { ...current }
+        };
+      }
+      return;
+    }
+
+    if (remaining < 0 || idx >= BATTERY_TYPES.length) return;
+
+    const { cents, type } = BATTERY_TYPES[idx];
+
+    for (let n = 0; n <= maxUnits; n++) {
+      const nextRemaining = remaining - (cents * n);
+      if (nextRemaining < 0) break;
+
+      current[type] = n;
+      dfs(idx + 1, nextRemaining, current);
+      current[type] = 0;
+    }
+  }
+
+  dfs(0, totalCents, {});
+
+  if (!best) {
+    return { ok: false, units: 0, breakdown: {} };
+  }
+
+  return best;
+}
 export async function viewReports(root, { setStatus }) {
   setStatus('Cargando informes…');
 
@@ -82,7 +134,20 @@ export async function viewReports(root, { setStatus }) {
           <div class="small">Gasto total en baterías</div>
         </div>
       </section>
+<section class="card span4">
+  <div class="kpi">
+    <div class="label">Unidades baterías</div>
+    <div class="value" id="kBatteryUnits">0</div>
+    <div class="small">Total estimado</div>
+  </div>
+</section>
 
+<section class="card span4">
+  <div class="kpi">
+    <div class="label">Desglose baterías</div>
+    <div class="small" id="kBatteryBreakdown">—</div>
+  </div>
+</section>
       <section class="card">
         <div class="spread" style="margin-bottom:10px;">
           <h2 style="margin:0;">Detalle</h2>
@@ -120,7 +185,8 @@ export async function viewReports(root, { setStatus }) {
   const kFood = root.querySelector('#kFood');
   const kMaterial = root.querySelector('#kMaterial');
   const kBattery = root.querySelector('#kBattery');
-
+const kBatteryUnits = root.querySelector('#kBatteryUnits');
+const kBatteryBreakdown = root.querySelector('#kBatteryBreakdown');
   let currentList = [];
 
   async function paint() {
@@ -149,7 +215,9 @@ export async function viewReports(root, { setStatus }) {
     let totalFoodCents = 0;
     let totalMaterialCents = 0;
     let totalBatteryCents = 0;
-
+let totalBatteryUnits = 0;
+const batteryTotalsByType = {};
+let unresolvedBattery = 0;
     for (const it of list) {
       const key = it.type;
       if (resumen[key]) {
@@ -161,6 +229,22 @@ export async function viewReports(root, { setStatus }) {
       totalFoodCents += Number(breakdown.comida || 0);
       totalMaterialCents += Number(breakdown.material || 0);
       totalBatteryCents += Number(breakdown.bateria || 0);
+      const batteryCents = Number(breakdown.bateria || 0);
+
+if (batteryCents > 0) {
+  const res = resolveBatteryCombination(batteryCents);
+
+  if (res.ok) {
+    totalBatteryUnits += res.units;
+
+    Object.entries(res.breakdown).forEach(([type, n]) => {
+      if (!n) return;
+      batteryTotalsByType[type] = (batteryTotalsByType[type] || 0) + n;
+    });
+  } else {
+    unresolvedBattery += batteryCents;
+  }
+}
     }
 
     const totalGeneral =
@@ -180,7 +264,14 @@ export async function viewReports(root, { setStatus }) {
     kFood.textContent = centsToEUR(totalFoodCents);
     kMaterial.textContent = centsToEUR(totalMaterialCents);
     kBattery.textContent = centsToEUR(totalBatteryCents);
+kBatteryUnits.textContent = totalBatteryUnits;
 
+const breakdownText = Object.entries(batteryTotalsByType)
+  .sort((a, b) => b[1] - a[1])
+  .map(([type, n]) => `${type}: ${n}`)
+  .join(' · ') || '—';
+
+kBatteryBreakdown.textContent = breakdownText;
     const pct = (n) => {
       if (!totalGeneral) return '0 %';
       return `${((n / totalGeneral) * 100).toFixed(1).replace('.', ',')} %`;
