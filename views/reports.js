@@ -250,7 +250,30 @@ const techCalendar = root.querySelector('#techCalendar');
     });
 
     currentList = list;
+const techNames = Array.from(
+  new Set(
+    list.flatMap((it) =>
+      (Array.isArray(it?.techs_in_part) ? it.techs_in_part : [])
+        .map((t) => String(t || '').trim())
+        .filter(Boolean)
+    )
+  )
+).sort((a, b) => a.localeCompare(b, 'es'));
 
+const previousTech = techSelect.value || '';
+
+techSelect.innerHTML = '<option value="">Seleccionar técnico</option>' +
+  techNames.map((name) => `<option value="${name}">${name}</option>`).join('');
+
+if (previousTech && techNames.includes(previousTech)) {
+  techSelect.value = previousTech;
+} else if (techNames.length === 1) {
+  techSelect.value = techNames[0];
+} else if (techNames.length > 0 && !techSelect.value) {
+  techSelect.value = techNames[0];
+} else {
+  techSelect.value = '';
+}
     const resumen = {
       INSTALACION: { total_cents: 0, count: 0 },
       REPARACION: { total_cents: 0, count: 0 },
