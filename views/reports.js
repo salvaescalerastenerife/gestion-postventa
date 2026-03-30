@@ -365,7 +365,38 @@ kBatteryBreakdown.textContent = breakdownText;
         <td>${pct(resumen.MANTENIMIENTO.total_cents)}</td>
       </tr>
     `;
+const selectedTech = String(techSelect.value || '').trim();
 
+if (!selectedTech) {
+  kTechTotal.textContent = '0';
+  kTechDays.textContent = '0';
+  kTechAvg.textContent = '0,00';
+  techCalendar.innerHTML = '';
+} else {
+  const techItems = list.filter((it) => {
+    const techs = Array.isArray(it?.techs_in_part) ? it.techs_in_part : [];
+    return techs
+      .map((t) => String(t || '').trim())
+      .filter(Boolean)
+      .includes(selectedTech);
+  });
+
+  const activityDaysSet = new Set(
+    techItems
+      .map((it) => String(it?.date || '').trim())
+      .filter(Boolean)
+  );
+
+  const techTotal = techItems.length;
+  const techDays = activityDaysSet.size;
+  const techAvg = techDays > 0 ? (techTotal / techDays) : 0;
+
+  kTechTotal.textContent = String(techTotal);
+  kTechDays.textContent = String(techDays);
+  kTechAvg.textContent = techAvg.toFixed(2).replace('.', ',');
+
+  techCalendar.innerHTML = '';
+}
     setStatus(`Listo · ${list.length} intervención(es) analizadas`, 'good');
   }
 
