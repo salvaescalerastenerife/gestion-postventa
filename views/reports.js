@@ -148,6 +148,46 @@ export async function viewReports(root, { setStatus }) {
     <div class="small" id="kBatteryBreakdown">—</div>
   </div>
 </section>
+<section class="card span12">
+  <div class="spread" style="align-items:center; gap:8px;">
+    <div>
+      <h2 style="margin:0;">Actividad diaria por técnico</h2>
+      <div class="muted">Calendario mensual del técnico seleccionado dentro del rango consultado.</div>
+    </div>
+
+    <select class="input" id="techSelect" style="max-width:220px;">
+      <option value="">Seleccionar técnico</option>
+    </select>
+  </div>
+
+  <div class="grid" style="margin-top:12px;">
+    <section class="card span4">
+      <div class="kpi">
+        <div class="label">Total intervenciones</div>
+        <div class="value" id="kTechTotal">0</div>
+        <div class="small">Dentro del rango</div>
+      </div>
+    </section>
+
+    <section class="card span4">
+      <div class="kpi">
+        <div class="label">Media / día activo</div>
+        <div class="value" id="kTechAvg">0,00</div>
+        <div class="small">Solo días con actividad</div>
+      </div>
+    </section>
+
+    <section class="card span4">
+      <div class="kpi">
+        <div class="label">Días con actividad</div>
+        <div class="value" id="kTechDays">0</div>
+        <div class="small">Dentro del rango</div>
+      </div>
+    </section>
+  </div>
+
+  <div id="techCalendar" style="margin-top:12px;"></div>
+</section>
       <section class="card">
         <div class="spread" style="margin-bottom:10px;">
           <h2 style="margin:0;">Detalle</h2>
@@ -187,6 +227,11 @@ export async function viewReports(root, { setStatus }) {
   const kBattery = root.querySelector('#kBattery');
 const kBatteryUnits = root.querySelector('#kBatteryUnits');
 const kBatteryBreakdown = root.querySelector('#kBatteryBreakdown');
+const techSelect = root.querySelector('#techSelect');
+const kTechTotal = root.querySelector('#kTechTotal');
+const kTechAvg = root.querySelector('#kTechAvg');
+const kTechDays = root.querySelector('#kTechDays');
+const techCalendar = root.querySelector('#techCalendar');
   let currentList = [];
 
   async function paint() {
