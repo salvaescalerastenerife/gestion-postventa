@@ -310,3 +310,165 @@ a:hover{
   .card.span6{grid-column:span 6}
   .card.span4{grid-column:span 4}
 }
+/* ===== Calendario técnico en Informes ===== */
+
+.tech-cal {
+  border: 1px solid rgba(120, 70, 20, 0.14);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fffaf4 0%, #fff4e8 100%);
+  overflow: hidden;
+}
+
+.tech-cal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(120, 70, 20, 0.12);
+  background: linear-gradient(180deg, rgba(255, 173, 92, 0.16) 0%, rgba(255, 173, 92, 0.06) 100%);
+}
+
+.tech-cal__title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #7a4317;
+  text-transform: capitalize;
+}
+
+.tech-cal__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px 12px 0;
+}
+
+.tech-cal__weekday {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #9a6a42;
+  padding: 4px 0;
+}
+
+.tech-cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px 12px 12px;
+}
+
+.tech-cal__cell {
+  position: relative;
+  min-height: 84px;
+  border-radius: 16px;
+  border: 1px solid rgba(120, 70, 20, 0.10);
+  background: #fffdf9;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.65) inset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tech-cal__cell--empty {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.tech-cal__cell--out {
+  background: rgba(120, 70, 20, 0.05);
+  border-style: dashed;
+  border-color: rgba(120, 70, 20, 0.10);
+}
+
+.tech-cal__day {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #8f6d54;
+  line-height: 1;
+}
+
+.tech-cal__count {
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 900;
+  color: #5b2e0d;
+  letter-spacing: -0.03em;
+}
+
+.tech-cal__cell.is-zero .tech-cal__count {
+  color: #c5a791;
+  opacity: 0.95;
+}
+
+.tech-cal__cell.is-low {
+  background: linear-gradient(180deg, #fff7ef 0%, #ffe8cf 100%);
+  border-color: rgba(205, 125, 42, 0.22);
+}
+
+.tech-cal__cell.is-mid {
+  background: linear-gradient(180deg, #ffeccd 0%, #ffd39d 100%);
+  border-color: rgba(205, 125, 42, 0.30);
+}
+
+.tech-cal__cell.is-high {
+  background: linear-gradient(180deg, #ffd79d 0%, #ffb864 100%);
+  border-color: rgba(205, 125, 42, 0.38);
+}
+
+.tech-cal__cell.is-high .tech-cal__count {
+  color: #4a2108;
+}
+
+@media (max-width: 900px) {
+  .tech-cal__grid,
+  .tech-cal__weekdays {
+    gap: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .tech-cal__cell {
+    min-height: 72px;
+    border-radius: 14px;
+  }
+
+  .tech-cal__count {
+    font-size: 1.7rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .tech-cal__head {
+    padding: 12px 12px 8px;
+  }
+
+  .tech-cal__title {
+    font-size: 0.95rem;
+  }
+
+  .tech-cal__grid,
+  .tech-cal__weekdays {
+    gap: 5px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .tech-cal__cell {
+    min-height: 58px;
+    border-radius: 12px;
+  }
+
+  .tech-cal__day {
+    top: 6px;
+    left: 8px;
+    font-size: 0.66rem;
+  }
+
+  .tech-cal__count {
+    font-size: 1.35rem;
+  }
+}
