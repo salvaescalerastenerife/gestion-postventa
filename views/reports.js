@@ -13,7 +13,60 @@ function resolveBatteryCombination(totalCents) {
   if (!totalCents || totalCents <= 0) {
     return { ok: true, units: 0, breakdown: {} };
   }
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
 
+function toYMD(dateObj) {
+  return `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}-${pad2(dateObj.getDate())}`;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function getMonthMatrix(baseDateStr) {
+  const base = baseDateStr ? new Date(`${baseDateStr}T00:00:00`) : new Date();
+  const year = base.getFullYear();
+  const month = base.getMonth();
+
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const startWeekday = (firstDay.getDay() + 6) % 7; // lunes=0 ... domingo=6
+
+  const cells = [];
+
+  for (let i = 0; i < startWeekday; i++) {
+    cells.push(null);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    cells.push(new Date(year, month, day));
+  }
+
+  while (cells.length % 7 !== 0) {
+    cells.push(null);
+  }
+
+  return {
+    year,
+    month,
+    cells
+  };
+}
+
+function getCellToneClass(count) {
+  if (!count) return 'is-zero';
+  if (count >= 5) return 'is-high';
+  if (count >= 3) return 'is-mid';
+  return 'is-low';
+}
   const maxUnits = 6; // límite razonable por intervención
   let best = null;
 
