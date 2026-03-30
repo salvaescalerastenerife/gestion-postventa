@@ -1,5 +1,6 @@
 import { dbInterventionsSearch } from '../db.js';
 import { centsToEUR } from '../parser.js';
+
 // --- MAPA DE BATERÍAS (desde app técnicos) ---
 const BATTERY_TYPES = [
   { cents: 3684, type: '12V 2Amp' },
@@ -13,6 +14,47 @@ function resolveBatteryCombination(totalCents) {
   if (!totalCents || totalCents <= 0) {
     return { ok: true, units: 0, breakdown: {} };
   }
+
+  const maxUnits = 6;
+  let best = null;
+
+  function dfs(idx, remaining, current) {
+    if (remaining === 0) {
+      const totalUnits = Object.values(current).reduce((a, b) => a + b, 0);
+
+      if (!best || totalUnits < best.units) {
+        best = {
+          ok: true,
+          units: totalUnits,
+          breakdown: { ...current }
+        };
+      }
+      return;
+    }
+
+    if (remaining < 0 || idx >= BATTERY_TYPES.length) return;
+
+    const { cents, type } = BATTERY_TYPES[idx];
+
+    for (let n = 0; n <= maxUnits; n++) {
+      const nextRemaining = remaining - (cents * n);
+      if (nextRemaining < 0) break;
+
+      current[type] = n;
+      dfs(idx + 1, nextRemaining, current);
+      current[type] = 0;
+    }
+  }
+
+  dfs(0, totalCents, {});
+
+  if (!best) {
+    return { ok: false, units: 0, breakdown: {} };
+  }
+
+  return best;
+}
+
 function pad2(n) {
   return String(n).padStart(2, '0');
 }
@@ -67,45 +109,7 @@ function getCellToneClass(count) {
   if (count >= 3) return 'is-mid';
   return 'is-low';
 }
-  const maxUnits = 6; // límite razonable por intervención
-  let best = null;
 
-  function dfs(idx, remaining, current) {
-    if (remaining === 0) {
-      const totalUnits = Object.values(current).reduce((a, b) => a + b, 0);
-
-      if (!best || totalUnits < best.units) {
-        best = {
-          ok: true,
-          units: totalUnits,
-          breakdown: { ...current }
-        };
-      }
-      return;
-    }
-
-    if (remaining < 0 || idx >= BATTERY_TYPES.length) return;
-
-    const { cents, type } = BATTERY_TYPES[idx];
-
-    for (let n = 0; n <= maxUnits; n++) {
-      const nextRemaining = remaining - (cents * n);
-      if (nextRemaining < 0) break;
-
-      current[type] = n;
-      dfs(idx + 1, nextRemaining, current);
-      current[type] = 0;
-    }
-  }
-
-  dfs(0, totalCents, {});
-
-  if (!best) {
-    return { ok: false, units: 0, breakdown: {} };
-  }
-
-  return best;
-}
 export async function viewReports(root, { setStatus }) {
   setStatus('Cargando informes…');
 
@@ -187,60 +191,63 @@ export async function viewReports(root, { setStatus }) {
           <div class="small">Gasto total en baterías</div>
         </div>
       </section>
-<section class="card span4">
-  <div class="kpi">
-    <div class="label">Unidades baterías</div>
-    <div class="value" id="kBatteryUnits">0</div>
-    <div class="small">Total estimado</div>
-  </div>
-</section>
 
-<section class="card span4">
-  <div class="kpi">
-    <div class="label">Desglose baterías</div>
-    <div class="small" id="kBatteryBreakdown">—</div>
-  </div>
-</section>
-<section class="card span12">
-  <div class="spread" style="align-items:center; gap:8px;">
-    <div>
-      <h2 style="margin:0;">Actividad diaria por técnico</h2>
-      <div class="muted">Calendario mensual del técnico seleccionado dentro del rango consultado.</div>
-    </div>
+      <section class="card span4">
+        <div class="kpi">
+          <div class="label">Unidades baterías</div>
+          <div class="value" id="kBatteryUnits">0</div>
+          <div class="small">Total estimado</div>
+        </div>
+      </section>
 
-    <select class="input" id="techSelect" style="max-width:220px;">
-      <option value="">Seleccionar técnico</option>
-    </select>
-  </div>
+      <section class="card span4">
+        <div class="kpi">
+          <div class="label">Desglose baterías</div>
+          <div class="small" id="kBatteryBreakdown">—</div>
+        </div>
+      </section>
 
-  <div class="grid" style="margin-top:12px;">
-    <section class="card span4">
-      <div class="kpi">
-        <div class="label">Total intervenciones</div>
-        <div class="value" id="kTechTotal">0</div>
-        <div class="small">Dentro del rango</div>
-      </div>
-    </section>
+      <section class="card span12">
+        <div class="spread" style="align-items:center; gap:8px;">
+          <div>
+            <h2 style="margin:0;">Actividad diaria por técnico</h2>
+            <div class="muted">Calendario mensual del técnico seleccionado dentro del rango consultado.</div>
+          </div>
 
-    <section class="card span4">
-      <div class="kpi">
-        <div class="label">Media / día activo</div>
-        <div class="value" id="kTechAvg">0,00</div>
-        <div class="small">Solo días con actividad</div>
-      </div>
-    </section>
+          <select class="input" id="techSelect" style="max-width:220px;">
+            <option value="">Seleccionar técnico</option>
+          </select>
+        </div>
 
-    <section class="card span4">
-      <div class="kpi">
-        <div class="label">Días con actividad</div>
-        <div class="value" id="kTechDays">0</div>
-        <div class="small">Dentro del rango</div>
-      </div>
-    </section>
-  </div>
+        <div class="grid" style="margin-top:12px;">
+          <section class="card span4">
+            <div class="kpi">
+              <div class="label">Total intervenciones</div>
+              <div class="value" id="kTechTotal">0</div>
+              <div class="small">Dentro del rango</div>
+            </div>
+          </section>
 
-  <div id="techCalendar" style="margin-top:12px;"></div>
-</section>
+          <section class="card span4">
+            <div class="kpi">
+              <div class="label">Media / día activo</div>
+              <div class="value" id="kTechAvg">0,00</div>
+              <div class="small">Solo días con actividad</div>
+            </div>
+          </section>
+
+          <section class="card span4">
+            <div class="kpi">
+              <div class="label">Días con actividad</div>
+              <div class="value" id="kTechDays">0</div>
+              <div class="small">Dentro del rango</div>
+            </div>
+          </section>
+        </div>
+
+        <div id="techCalendar" style="margin-top:12px;"></div>
+      </section>
+
       <section class="card">
         <div class="spread" style="margin-bottom:10px;">
           <h2 style="margin:0;">Detalle</h2>
@@ -278,14 +285,126 @@ export async function viewReports(root, { setStatus }) {
   const kFood = root.querySelector('#kFood');
   const kMaterial = root.querySelector('#kMaterial');
   const kBattery = root.querySelector('#kBattery');
-const kBatteryUnits = root.querySelector('#kBatteryUnits');
-const kBatteryBreakdown = root.querySelector('#kBatteryBreakdown');
-const techSelect = root.querySelector('#techSelect');
-const kTechTotal = root.querySelector('#kTechTotal');
-const kTechAvg = root.querySelector('#kTechAvg');
-const kTechDays = root.querySelector('#kTechDays');
-const techCalendar = root.querySelector('#techCalendar');
+  const kBatteryUnits = root.querySelector('#kBatteryUnits');
+  const kBatteryBreakdown = root.querySelector('#kBatteryBreakdown');
+
+  const techSelect = root.querySelector('#techSelect');
+  const kTechTotal = root.querySelector('#kTechTotal');
+  const kTechAvg = root.querySelector('#kTechAvg');
+  const kTechDays = root.querySelector('#kTechDays');
+  const techCalendar = root.querySelector('#techCalendar');
+
   let currentList = [];
+
+  function renderTechCalendar() {
+    const selectedTech = String(techSelect.value || '').trim();
+
+    if (!selectedTech) {
+      kTechTotal.textContent = '0';
+      kTechDays.textContent = '0';
+      kTechAvg.textContent = '0,00';
+      techCalendar.innerHTML = '';
+      return;
+    }
+
+    const from = root.querySelector('#from').value || null;
+    const to = root.querySelector('#to').value || null;
+
+    const baseDateStr = from || to || new Date().toISOString().slice(0, 10);
+    const { year, month, cells } = getMonthMatrix(baseDateStr);
+
+    const rangeFrom = from ? new Date(`${from}T00:00:00`) : null;
+    const rangeTo = to ? new Date(`${to}T00:00:00`) : null;
+
+    const techItems = currentList.filter((it) => {
+      const techs = Array.isArray(it?.techs_in_part) ? it.techs_in_part : [];
+      return techs
+        .map((t) => String(t || '').trim())
+        .filter(Boolean)
+        .includes(selectedTech);
+    });
+
+    const countsByDate = {};
+
+    techItems.forEach((it) => {
+      const ymd = String(it?.date || '').trim();
+      if (!ymd) return;
+      countsByDate[ymd] = (countsByDate[ymd] || 0) + 1;
+    });
+
+    const visibleMonthDates = Object.keys(countsByDate).filter((ymd) => {
+      const d = new Date(`${ymd}T00:00:00`);
+      return d.getFullYear() === year && d.getMonth() === month;
+    });
+
+    const activityDaysSet = new Set(
+      visibleMonthDates.filter((ymd) => (countsByDate[ymd] || 0) > 0)
+    );
+
+    const techTotal = visibleMonthDates.reduce(
+      (acc, ymd) => acc + Number(countsByDate[ymd] || 0),
+      0
+    );
+    const techDays = activityDaysSet.size;
+    const techAvg = techDays > 0 ? techTotal / techDays : 0;
+
+    kTechTotal.textContent = String(techTotal);
+    kTechDays.textContent = String(techDays);
+    kTechAvg.textContent = techAvg.toFixed(2).replace('.', ',');
+
+    const monthTitle = new Intl.DateTimeFormat('es-ES', {
+      month: 'long',
+      year: 'numeric'
+    }).format(new Date(year, month, 1));
+
+    const weekLabels = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+    const cellsHtml = cells.map((cellDate) => {
+      if (!cellDate) {
+        return `<div class="tech-cal__cell tech-cal__cell--empty"></div>`;
+      }
+
+      const ymd = toYMD(cellDate);
+
+      const inRange =
+        (!rangeFrom || cellDate >= rangeFrom) &&
+        (!rangeTo || cellDate <= rangeTo);
+
+      if (!inRange) {
+        return `
+          <div class="tech-cal__cell tech-cal__cell--out">
+            <div class="tech-cal__day">${cellDate.getDate()}</div>
+          </div>
+        `;
+      }
+
+      const count = Number(countsByDate[ymd] || 0);
+      const toneClass = getCellToneClass(count);
+
+      return `
+        <div class="tech-cal__cell ${toneClass}">
+          <div class="tech-cal__day">${cellDate.getDate()}</div>
+          <div class="tech-cal__count">${count}</div>
+        </div>
+      `;
+    }).join('');
+
+    techCalendar.innerHTML = `
+      <div class="tech-cal">
+        <div class="tech-cal__head">
+          <div class="tech-cal__title">${escapeHtml(selectedTech)} · ${escapeHtml(monthTitle)}</div>
+        </div>
+
+        <div class="tech-cal__weekdays">
+          ${weekLabels.map((d) => `<div class="tech-cal__weekday">${d}</div>`).join('')}
+        </div>
+
+        <div class="tech-cal__grid">
+          ${cellsHtml}
+        </div>
+      </div>
+    `;
+  }
 
   async function paint() {
     setStatus('Calculando informe…');
@@ -303,42 +422,46 @@ const techCalendar = root.querySelector('#techCalendar');
     });
 
     currentList = list;
-const techNames = Array.from(
-  new Set(
-    list.flatMap((it) =>
-      (Array.isArray(it?.techs_in_part) ? it.techs_in_part : [])
-        .map((t) => String(t || '').trim())
-        .filter(Boolean)
-    )
-  )
-).sort((a, b) => a.localeCompare(b, 'es'));
 
-const previousTech = techSelect.value || '';
+    const techNames = Array.from(
+      new Set(
+        list.flatMap((it) =>
+          (Array.isArray(it?.techs_in_part) ? it.techs_in_part : [])
+            .map((t) => String(t || '').trim())
+            .filter(Boolean)
+        )
+      )
+    ).sort((a, b) => a.localeCompare(b, 'es'));
 
-techSelect.innerHTML = '<option value="">Seleccionar técnico</option>' +
-  techNames.map((name) => `<option value="${name}">${name}</option>`).join('');
+    const previousTech = techSelect.value || '';
 
-if (previousTech && techNames.includes(previousTech)) {
-  techSelect.value = previousTech;
-} else if (techNames.length === 1) {
-  techSelect.value = techNames[0];
-} else if (techNames.length > 0 && !techSelect.value) {
-  techSelect.value = techNames[0];
-} else {
-  techSelect.value = '';
-}
+    techSelect.innerHTML = '<option value="">Seleccionar técnico</option>' +
+      techNames.map((name) => `<option value="${name}">${name}</option>`).join('');
+
+    if (previousTech && techNames.includes(previousTech)) {
+      techSelect.value = previousTech;
+    } else if (techNames.length === 1) {
+      techSelect.value = techNames[0];
+    } else if (techNames.length > 0) {
+      techSelect.value = techNames[0];
+    } else {
+      techSelect.value = '';
+    }
+
     const resumen = {
       INSTALACION: { total_cents: 0, count: 0 },
       REPARACION: { total_cents: 0, count: 0 },
-      MANTENIMIENTO: { total_cents: 0, count: 0 },
+      MANTENIMIENTO: { total_cents: 0, count: 0 }
     };
 
     let totalFoodCents = 0;
     let totalMaterialCents = 0;
     let totalBatteryCents = 0;
-let totalBatteryUnits = 0;
-const batteryTotalsByType = {};
-let unresolvedBattery = 0;
+
+    let totalBatteryUnits = 0;
+    const batteryTotalsByType = {};
+    let unresolvedBattery = 0;
+
     for (const it of list) {
       const key = it.type;
       if (resumen[key]) {
@@ -350,22 +473,23 @@ let unresolvedBattery = 0;
       totalFoodCents += Number(breakdown.comida || 0);
       totalMaterialCents += Number(breakdown.material || 0);
       totalBatteryCents += Number(breakdown.bateria || 0);
+
       const batteryCents = Number(breakdown.bateria || 0);
 
-if (batteryCents > 0) {
-  const res = resolveBatteryCombination(batteryCents);
+      if (batteryCents > 0) {
+        const res = resolveBatteryCombination(batteryCents);
 
-  if (res.ok) {
-    totalBatteryUnits += res.units;
+        if (res.ok) {
+          totalBatteryUnits += res.units;
 
-    Object.entries(res.breakdown).forEach(([type, n]) => {
-      if (!n) return;
-      batteryTotalsByType[type] = (batteryTotalsByType[type] || 0) + n;
-    });
-  } else {
-    unresolvedBattery += batteryCents;
-  }
-}
+          Object.entries(res.breakdown).forEach(([typeName, n]) => {
+            if (!n) return;
+            batteryTotalsByType[typeName] = (batteryTotalsByType[typeName] || 0) + n;
+          });
+        } else {
+          unresolvedBattery += batteryCents;
+        }
+      }
     }
 
     const totalGeneral =
@@ -385,14 +509,18 @@ if (batteryCents > 0) {
     kFood.textContent = centsToEUR(totalFoodCents);
     kMaterial.textContent = centsToEUR(totalMaterialCents);
     kBattery.textContent = centsToEUR(totalBatteryCents);
-kBatteryUnits.textContent = totalBatteryUnits;
+    kBatteryUnits.textContent = String(totalBatteryUnits);
 
-const breakdownText = Object.entries(batteryTotalsByType)
-  .sort((a, b) => b[1] - a[1])
-  .map(([type, n]) => `${type}: ${n}`)
-  .join(' · ') || '—';
+    const breakdownParts = Object.entries(batteryTotalsByType)
+      .sort((a, b) => b[1] - a[1])
+      .map(([typeName, n]) => `${typeName}: ${n}`);
 
-kBatteryBreakdown.textContent = breakdownText;
+    if (unresolvedBattery > 0) {
+      breakdownParts.push(`No deducible: ${centsToEUR(unresolvedBattery)}`);
+    }
+
+    kBatteryBreakdown.textContent = breakdownParts.join(' · ') || '—';
+
     const pct = (n) => {
       if (!totalGeneral) return '0 %';
       return `${((n / totalGeneral) * 100).toFixed(1).replace('.', ',')} %`;
@@ -418,42 +546,14 @@ kBatteryBreakdown.textContent = breakdownText;
         <td>${pct(resumen.MANTENIMIENTO.total_cents)}</td>
       </tr>
     `;
-const selectedTech = String(techSelect.value || '').trim();
 
-if (!selectedTech) {
-  kTechTotal.textContent = '0';
-  kTechDays.textContent = '0';
-  kTechAvg.textContent = '0,00';
-  techCalendar.innerHTML = '';
-} else {
-  const techItems = list.filter((it) => {
-    const techs = Array.isArray(it?.techs_in_part) ? it.techs_in_part : [];
-    return techs
-      .map((t) => String(t || '').trim())
-      .filter(Boolean)
-      .includes(selectedTech);
-  });
+    renderTechCalendar();
 
-  const activityDaysSet = new Set(
-    techItems
-      .map((it) => String(it?.date || '').trim())
-      .filter(Boolean)
-  );
-
-  const techTotal = techItems.length;
-  const techDays = activityDaysSet.size;
-  const techAvg = techDays > 0 ? (techTotal / techDays) : 0;
-
-  kTechTotal.textContent = String(techTotal);
-  kTechDays.textContent = String(techDays);
-  kTechAvg.textContent = techAvg.toFixed(2).replace('.', ',');
-
-  techCalendar.innerHTML = '';
-}
     setStatus(`Listo · ${list.length} intervención(es) analizadas`, 'good');
   }
 
   run.addEventListener('click', paint);
+  techSelect.addEventListener('change', renderTechCalendar);
 
   btnPdf?.addEventListener('click', async () => {
     const jsPDFLib = window.jspdf?.jsPDF;
@@ -491,28 +591,28 @@ if (!selectedTech) {
     doc.text(`Tipo: ${type}`, 14, y);
 
     y += 8;
-doc.text(`Comidas: ${kFood.textContent}`, 14, y);
-y += 6;
-doc.text(`Materiales: ${kMaterial.textContent}`, 14, y);
-y += 6;
-doc.text(`Baterías: ${kBattery.textContent}`, 14, y);
-y += 6;
-doc.text(`Unidades baterías: ${String(kBatteryUnits.textContent || '0')}`, 14, y);
+    doc.text(`Comidas: ${kFood.textContent}`, 14, y);
+    y += 6;
+    doc.text(`Materiales: ${kMaterial.textContent}`, 14, y);
+    y += 6;
+    doc.text(`Baterías: ${kBattery.textContent}`, 14, y);
+    y += 6;
+    doc.text(`Unidades baterías: ${String(kBatteryUnits.textContent || '0')}`, 14, y);
 
-const batteryBreakdownPdf = String(kBatteryBreakdown.textContent || '—').trim();
-if (batteryBreakdownPdf && batteryBreakdownPdf !== '—') {
-  y += 6;
+    const batteryBreakdownPdf = String(kBatteryBreakdown.textContent || '—').trim();
+    if (batteryBreakdownPdf && batteryBreakdownPdf !== '—') {
+      y += 6;
 
-  const breakdownLines = doc.splitTextToSize(
-    `Desglose baterías: ${batteryBreakdownPdf}`,
-    180
-  );
+      const breakdownLines = doc.splitTextToSize(
+        `Desglose baterías: ${batteryBreakdownPdf}`,
+        180
+      );
 
-  doc.text(breakdownLines, 14, y);
-  y += (breakdownLines.length - 1) * 6;
-}
+      doc.text(breakdownLines, 14, y);
+      y += (breakdownLines.length - 1) * 6;
+    }
 
-y += 10;
+    y += 10;
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
@@ -559,7 +659,7 @@ y += 10;
     (Array.isArray(currentList) ? currentList : []).forEach((it) => {
       const rawTechs = Array.isArray(it?.techs_in_part) ? it.techs_in_part : [];
       const techs = rawTechs
-        .map(t => String(t || '').trim())
+        .map((t) => String(t || '').trim())
         .filter(Boolean);
 
       const total = Number(it?.total_cents || 0);
