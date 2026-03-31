@@ -26,7 +26,7 @@ export function interventionsToCSV(rows){
       r.date || '',
       r.type || '',
       r.client_id || '',
-      centsToEUR(Number(r.total_cents || 0)),
+(Number(r.total_cents || 0) / 100).toFixed(2).replace('.', ','),
       techs
     ].map(esc);
 
