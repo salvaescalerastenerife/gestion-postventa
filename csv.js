@@ -8,35 +8,29 @@ function esc(s){
 
 export function interventionsToCSV(rows){
   const headers = [
-    'date','type','client_id','total',
-    'instalacion','reparacion','desplazamiento','km','comida','material','bateria','furgon','fijo',
-    'techs_in_part','sources_count','uid'
+    'fecha',
+    'tipo_intervencion',
+    'cod_cliente',
+    'importe',
+    'tecnicos'
   ];
 
-  const lines = [headers.join(',')];
+  const lines = [headers.join(';')];
 
   for (const r of rows){
-    const b = r.breakdown_cents || {};
+    const techs = Array.isArray(r.techs_in_part)
+      ? r.techs_in_part.map(t => String(t || '').trim()).filter(Boolean).join(' + ')
+      : '';
+
     const line = [
-      r.date,
-      r.type,
-      r.client_id,
-      centsToEUR(r.total_cents),
-      centsToEUR(b.instalacion||0),
-      centsToEUR(b.reparacion||0),
-      centsToEUR(b.desplazamiento||0),
-      centsToEUR(b.km||0),
-      centsToEUR(b.comida||0),
-      centsToEUR(b.material||0),
-      centsToEUR(b.bateria||0),
-      centsToEUR(b.furgon||0),
-      centsToEUR(b.fijo||0),
-      (r.techs_in_part||[]).join(' + '),
-      (r.sources||[]).length,
-      r.uid
+      r.date || '',
+      r.type || '',
+      r.client_id || '',
+      centsToEUR(Number(r.total_cents || 0)),
+      techs
     ].map(esc);
 
-    lines.push(line.join(','));
+    lines.push(line.join(';'));
   }
 
   return lines.join('\n');
