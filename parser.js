@@ -71,17 +71,18 @@ export function parseClosureText(text, filename='(pdf)'){
     const start = line.match(/^\d+\.\s*(INSTALACION|REPARACION|MANTENIMIENTO)\s*·\s*Cliente\s*(\d+)/i);
     if (start){
       pushCur();
-      cur = {
-        uid: '',
-        date,
-        type: start[1].toUpperCase(),
-        client_id: start[2],
-        total_cents: 0,
-        breakdown_cents: {},
-        techs_in_part: [],
-        obs: '',
-        sources: [] // filled later
-      };
+cur = {
+  uid: '',
+  date,
+  type: start[1].toUpperCase(),
+  client_id: start[2],
+  client_name: '',
+  total_cents: 0,
+  breakdown_cents: {},
+  techs_in_part: [],
+  obs: '',
+  sources: []
+};
       continue;
     }
 
@@ -95,6 +96,11 @@ export function parseClosureText(text, filename='(pdf)'){
         .filter(Boolean);
       continue;
     }
+    const nameMatch = line.match(/^Nombre cliente:\s*(.+)$/i);
+if (nameMatch){
+  cur.client_name = nameMatch[1].trim();
+  continue;
+}
 
     const totalPart = line.match(/^Total parte:\s*([\d.,]+)\s*€/i);
     if (totalPart){
