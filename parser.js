@@ -68,21 +68,41 @@ export function parseClosureText(text, filename='(pdf)'){
   for (let i=0;i<lines.length;i++){
     const line = lines[i];
 
-    const start = line.match(/^\d+\.\s*(INSTALACION|REPARACION|MANTENIMIENTO)\s*·\s*Cliente\s*(\d+)/i);
+        const start = line.match(/^\d+\.\s*(INSTALACION|REPARACION|MANTENIMIENTO)\s*·\s*Cliente\s*(\d+)/i);
     if (start){
       pushCur();
-cur = {
-  uid: '',
-  date,
-  type: start[1].toUpperCase(),
-  client_id: start[2],
-  client_name: '',
-  total_cents: 0,
-  breakdown_cents: {},
-  techs_in_part: [],
-  obs: '',
-  sources: []
-};
+      const startLine = line;
+      cur = {
+        uid: '',
+        date,
+        type: start[1].toUpperCase(),
+        client_id: start[2],
+        client_name: '',
+        total_cents: 0,
+        breakdown_cents: {},
+        fax_meta: {
+          line_title: startLine,
+          horas_base_label: '',
+          horas_base_h: null,
+          horas_base_rate: null,
+          horas_base_mult: null,
+          horas_base_total_cents: 0,
+          horas_despl_h: null,
+          horas_despl_rate: null,
+          horas_despl_mult: null,
+          horas_despl_total_cents: 0,
+          km_units: null,
+          km_rate: null,
+          km_total_cents: 0,
+          almuerzo_cents: 0,
+          cena_cents: 0,
+          comida_cents: 0,
+          material_cents: 0
+        },
+        techs_in_part: [],
+        obs: '',
+        sources: [] // filled later
+      };
       continue;
     }
 
