@@ -57,7 +57,7 @@ function buildInstalacionBlock(it) {
   const total = Number(it?.total_cents || 0);
 
   const out = [];
-  out.push(`Instalación ${clientName} Int: ${clientId}  ${dateTxt}`);
+  out.push(`[[TITLE]]Instalación ${clientName} Int: ${clientId}  ${dateTxt}`);
 
   if (horasInst > 0) {
     out.push(`Horas de instalación: ${String(horasInst).replace('.', ',')}x${horasInstRate} x${horasInstMult} =${euroNoSymbol(totalInst)}€`);
@@ -78,7 +78,6 @@ function buildInstalacionBlock(it) {
     out.push(`Consumibles: ${euroNoSymbol(material)}`);
   }
 
-  // de momento mantenemos furgón fijo visual como en Bernardo
   out.push(`Furgon: 80€`);
   out.push(`Total:${euroNoSymbol(total)}€`);
   out.push('');
@@ -92,15 +91,12 @@ export function buildFaxMonthlyText(rows, { year, month }) {
 
   const totalAll = rows.reduce((acc, r) => acc + Number(r.total_cents || 0), 0);
 
-  const parts = [];
-  parts.push('MENSAJE VIA FAX');
+    const parts = [];
+  parts.push(`[[BOLD]]DE: BERNARDO GONZALEZ-ROCA  FECHA:${new Date().toLocaleDateString('es-ES', { day:'2-digit', month:'long', year:'numeric' })}`);
+  parts.push('[[BOLD]]EMPRESA: GONZALEZ-ROCA Suministros Ortopédicos - Delegación Stannah-INCISA Canarias ');
   parts.push('');
-  parts.push('196');
-  parts.push(`DE: BERNARDO GONZALEZ-ROCA  FECHA:${new Date().toLocaleDateString('es-ES', { day:'2-digit', month:'long', year:'numeric' })}`);
-  parts.push('EMPRESA: GONZALEZ-ROCA Suministros Ortopédicos - Delegación Stannah-INCISA Canarias ');
-  parts.push('');
-  parts.push('PARA: Jose Manuel Duran y Roser');
-  parts.push('EMPRESA: Stannah-INCISA');
+  parts.push('[[BOLD]]PARA: Jose Manuel Duran y Roser');
+  parts.push('[[BOLD]]EMPRESA: Stannah-INCISA');
   parts.push('Nº DE PÁGINAS (incluyendo esta): ');
   parts.push('Estimados Jose Manuel y Roser:');
   parts.push('');
