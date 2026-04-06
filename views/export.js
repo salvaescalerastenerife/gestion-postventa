@@ -78,9 +78,9 @@ root.querySelector('#faxMonth').addEventListener('click', async () => {
 
   const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
 
-  const M = 14;
-  const maxW = 182;
-  let y = 16;
+const M = 14;
+const maxW = 182;
+let y = 18;
 
   const ensurePage = (extra = 6) => {
     if (y + extra > 285) {
@@ -107,22 +107,28 @@ root.querySelector('#faxMonth').addEventListener('click', async () => {
     ensurePage(isTitle ? 8 : 6);
 
     if (!line.trim()) {
-      y += 5;
+      y += 10;
       continue;
     }
 
     if (isTitle) {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.text(line, M, y);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
 
-      const textWidth = doc.getTextWidth(line);
-      doc.setLineWidth(0.3);
-      doc.line(M, y + 1, M + textWidth, y + 1);
+  const wrappedTitle = doc.splitTextToSize(line, maxW);
+  doc.text(wrappedTitle, M, y);
 
-      y += 6;
-      continue;
-    }
+  let underlineY = y + 1;
+  for (const titleLine of wrappedTitle) {
+    const textWidth = doc.getTextWidth(titleLine);
+    doc.setLineWidth(0.3);
+    doc.line(M, underlineY, M + textWidth, underlineY);
+    underlineY += 5;
+  }
+
+  y += wrappedTitle.length * 5 + 2;
+  continue;
+}
 
     doc.setFont('helvetica', isBold ? 'bold' : 'normal');
     doc.setFontSize(11);
