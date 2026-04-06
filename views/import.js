@@ -196,8 +196,10 @@ export async function viewImport(root, { state, setStatus }){
             date: p.date,
             type: p.type,
             client_id: p.client_id,
+            client_name: p.client_name || '',
             total_cents: p.total_cents,
             breakdown_cents: p.breakdown_cents || {},
+            fax_meta: p.fax_meta || {},
             techs_in_part: p.techs_in_part || [],
             obs: p.obs || '',
             sources: [source],
@@ -210,6 +212,8 @@ export async function viewImport(root, { state, setStatus }){
 
           interventionsToUpsert.push({
             ...existing,
+            client_name: p.client_name || existing.client_name || '',
+            fax_meta: p.fax_meta || existing.fax_meta || {},
             sources
           });
         }
