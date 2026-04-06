@@ -61,22 +61,79 @@ root.querySelector('#faxMonth').addEventListener('click', async () => {
     return;
   }
 
+  const jsPDFLib = window.jspdf?.jsPDF;
+  if (!jsPDFLib) {
+    alert('No se pudo cargar jsPDF.');
+    return;
+  }
+
   setStatus('Generando documento mensual…');
 
   const rows = await dbInterventionsSearch({ from, to });
-
-  // 👉 Detectar mes automáticamente (usamos "from" como referencia)
   const refDate = from || to;
   const [year, month] = refDate.split('-');
 
-  const txt = buildFaxMonthlyText(rows, {
-    year,
-    month
-  });
+  const txt = buildFaxMonthlyText(rows, { year, month });
+  const lines = txt.split('\n');
 
-  const name = `fax_${year}_${month}.txt`;
+  const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
 
-  downloadTextFile(name, txt, 'text/plain');
+  const M = 14;
+  const maxW = 182;
+  let y = 16;
+
+  const ensurePage = (extra = 6) => {
+    if (y + extra > 285) {
+      doc.addPage();
+      y = 16;
+    }
+  };
+
+  for (const rawLine of lines) {
+    let line = rawLine;
+    let isBold = false;
+    let isTitle = false;
+
+    if (line.startsWith('[[BOLD]]')) {
+      isBold = true;
+      line = line.replace('[[BOLD]]', '');
+    }
+
+    if (line.startsWith('[[TITLE]]')) {
+      isTitle = true;
+      line = line.replace('[[TITLE]]', '');
+    }
+
+    ensurePage(isTitle ? 8 : 6);
+
+    if (!line.trim()) {
+      y += 5;
+      continue;
+    }
+
+    if (isTitle) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text(line, M, y);
+
+      const textWidth = doc.getTextWidth(line);
+      doc.setLineWidth(0.3);
+      doc.line(M, y + 1, M + textWidth, y + 1);
+
+      y += 6;
+      continue;
+    }
+
+    doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+    doc.setFontSize(11);
+
+    const wrapped = doc.splitTextToSize(line, maxW);
+    doc.text(wrapped, M, y);
+    y += wrapped.length * 5;
+  }
+
+  const name = `fax_${year}_${month}.pdf`;
+  doc.save(name);
 
   setStatus('Documento generado ✅', 'good');
 });
