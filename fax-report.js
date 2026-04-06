@@ -29,64 +29,61 @@ function titleCaseLoose(s) {
 }
 
 function buildInstalacionBlock(it) {
-  const h = it?.header || {};
-  const d = it?.datos || {};
-  const t = it?.tarifas || {};
+  const fm = it?.fax_meta || {};
 
-  const clientName = titleCaseLoose(h.client_name || h.cliente || '');
-  const clientId = h.idCliente || it.client_id || '';
-  const dateTxt = shortDate(it.date);
+  const clientName = String(it?.client_name || '').trim();
+  const clientId = it?.client_id || '';
+  const dateTxt = shortDate(it?.date);
 
-  const horasInst = Number(d.horas_inst || 0);
-  const horasDespl = Number(d.horas_despl || 0);
-  const kms = Number(d.kms || 0);
-  const comida = Number(d.almuerzo || 0);
-  const cena = Number(d.cena || 0);
-  const material = Number(d.material || 0);
-  const furgon = d.furgon ? Number(t.FURGON || 80) : 0;
+  const horasInst = Number(fm.horas_base_h || 0);
+  const horasInstRate = Number(fm.horas_base_rate || 27.95);
+  const horasInstMult = Number(fm.horas_base_mult || 2);
+  const totalInst = Number(fm.horas_base_total_cents || 0);
 
-  const pInst = Number(t.P_INST || 27.95);
-  const pDespl = Number(t.P_DESPL || 19.28);
-  const pKm = Number(t.P_KM || 0.31);
+  const horasDespl = Number(fm.horas_despl_h || 0);
+  const horasDesplRate = Number(fm.horas_despl_rate || 19.28);
+  const horasDesplMult = Number(fm.horas_despl_mult || 2);
+  const totalDespl = Number(fm.horas_despl_total_cents || 0);
 
-  const nTechs =
-    [h.tecnico1, h.tecnico2].filter(Boolean).length || 2;
+  const kms = Number(fm.km_units || 0);
+  const kmRate = Number(fm.km_rate || 0.31);
+  const totalKm = Number(fm.km_total_cents || 0);
 
-  const totalInst = horasInst * pInst * nTechs;
-  const totalDespl = horasDespl * pDespl * nTechs;
-  const totalKm = kms * pKm;
-  const total = Number(it.total_cents || 0);
+  const almuerzo = Number(fm.almuerzo_cents || 0);
+  const cena = Number(fm.cena_cents || 0);
+  const comida = Number(fm.comida_cents || 0);
+  const material = Number(fm.material_cents || 0);
+
+  const total = Number(it?.total_cents || 0);
 
   const out = [];
   out.push(`Instalación ${clientName} Int: ${clientId}  ${dateTxt}`);
 
   if (horasInst > 0) {
-    out.push(`Horas de instalación: ${horasInst}x${pInst} x${nTechs} =${euroNoSymbol(Math.round(totalInst * 100))}€`);
+    out.push(`Horas de instalación: ${String(horasInst).replace('.', ',')}x${horasInstRate} x${horasInstMult} =${euroNoSymbol(totalInst)}€`);
   }
   if (horasDespl > 0) {
-    out.push(`Horas desplazamiento ${horasDespl}x${pDespl} x${nTechs}= ${euroNoSymbol(Math.round(totalDespl * 100))}€`);
+    out.push(`Horas desplazamiento ${String(horasDespl).replace('.', ',')}x${horasDesplRate} x${horasDesplMult}= ${euroNoSymbol(totalDespl)}€`);
   }
   if (kms > 0) {
-    out.push(`Km:${kms}x ${String(pKm).replace('.', ',')}€: ${euroNoSymbol(Math.round(totalKm * 100))}€`);
+    out.push(`Km:${String(kms).replace('.', ',')}x ${String(kmRate).replace('.', ',')}€: ${euroNoSymbol(totalKm)}€`);
   }
-  if (comida > 0) {
-    out.push(`Comida: ${euroNoSymbol(Math.round(comida * 100))}€`);
+  if (almuerzo > 0 || comida > 0) {
+    out.push(`Comida: ${euroNoSymbol(almuerzo || comida)}€`);
   }
   if (cena > 0) {
-    out.push(`Cena: ${euroNoSymbol(Math.round(cena * 100))}€`);
+    out.push(`Cena: ${euroNoSymbol(cena)}€`);
   }
   if (material > 0) {
-    out.push(`Consumibles: ${euroNoSymbol(Math.round(material * 100))}`);
-  }
-  if (furgon > 0) {
-    out.push(`Furgon: ${euroNoSymbol(Math.round(furgon * 100))}€`);
+    out.push(`Consumibles: ${euroNoSymbol(material)}`);
   }
 
+  // de momento mantenemos furgón fijo visual como en Bernardo
+  out.push(`Furgon: 80€`);
   out.push(`Total:${euroNoSymbol(total)}€`);
   out.push('');
   return out.join('\n');
 }
-
 export function buildFaxMonthlyText(rows, { year, month }) {
   const month0 = Number(month) - 1;
   const introMonth = `${monthNameEs(month0)} ${year}`;
