@@ -76,18 +76,37 @@ root.querySelector('#faxMonth').addEventListener('click', async () => {
   const txt = buildFaxMonthlyText(rows, { year, month });
   const lines = txt.split('\n');
 
-  const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
+const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
+
+const loadLogoDataUrl = async () => {
+  const res = await fetch('./logo_transparent_v2.png');
+  if (!res.ok) throw new Error('No se pudo cargar el logo');
+  const blob = await res.blob();
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
+try {
+  const logo = await loadLogoDataUrl();
+  doc.addImage(logo, 'PNG', 14, 8, 60, 20);
+} catch (e) {
+  console.warn('Logo no cargado:', e);
+}
 
 const M = 14;
 const maxW = 182;
-let y = 18;
+let y = 35;
 
   const ensurePage = (extra = 6) => {
-    if (y + extra > 285) {
-      doc.addPage();
-      y = 16;
-    }
-  };
+  if (y + extra > 285) {
+    doc.addPage();
+    y = 18;
+  }
+};
 
   for (const rawLine of lines) {
     let line = rawLine;
