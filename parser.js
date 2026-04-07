@@ -97,7 +97,16 @@ export function parseClosureText(text, filename='(pdf)'){
           almuerzo_cents: 0,
           cena_cents: 0,
           comida_cents: 0,
-          material_cents: 0
+          material_cents: 0,
+          bateria_cents: 0,
+          pilas_units: null,
+          pilas_unit_cents: 0,
+          pilas_total_cents: 0,
+          furgon_cents: 0,
+          mantenimiento_fijo_cents: 0,
+          parking_cents: 0,
+          gasolina_cents: 0,
+          alquiler_coche_cents: 0
         },
         techs_in_part: [],
         obs: '',
@@ -183,7 +192,49 @@ if (nameMatch){
       cur.fax_meta.material_cents = eurFromTextToCents(materialLine[1]);
       continue;
     }
-    
+       const bateriaLine = line.match(/^Batería:\s*([\d.,]+)\s*€/i);
+    if (bateriaLine){
+      cur.fax_meta.bateria_cents = eurFromTextToCents(bateriaLine[1]);
+      continue;
+    }
+
+    const pilasLine = line.match(/^Pilas:\s*(\d+)\s*x\s*([\d.,]+)\s*€\s*=\s*([\d.,]+)\s*€/i);
+    if (pilasLine){
+      cur.fax_meta.pilas_units = Number(pilasLine[1]);
+      cur.fax_meta.pilas_unit_cents = eurFromTextToCents(pilasLine[2]);
+      cur.fax_meta.pilas_total_cents = eurFromTextToCents(pilasLine[3]);
+      continue;
+    }
+
+    const furgonLine = line.match(/^Furgón:\s*([\d.,]+)\s*€/i);
+    if (furgonLine){
+      cur.fax_meta.furgon_cents = eurFromTextToCents(furgonLine[1]);
+      continue;
+    }
+
+    const mantenimientoLine = line.match(/^Mantenimiento(?:\s*\(fijo\))?:\s*([\d.,]+)\s*€/i);
+    if (mantenimientoLine){
+      cur.fax_meta.mantenimiento_fijo_cents = eurFromTextToCents(mantenimientoLine[1]);
+      continue;
+    }
+
+    const parkingLine = line.match(/^Parking:\s*([\d.,]+)\s*€/i);
+    if (parkingLine){
+      cur.fax_meta.parking_cents = eurFromTextToCents(parkingLine[1]);
+      continue;
+    }
+
+    const gasolinaLine = line.match(/^Gasolina:\s*([\d.,]+)\s*€/i);
+    if (gasolinaLine){
+      cur.fax_meta.gasolina_cents = eurFromTextToCents(gasolinaLine[1]);
+      continue;
+    }
+
+    const alquilerLine = line.match(/^(?:Coche alquiler|Alquiler coche):\s*([\d.,]+)\s*€/i);
+    if (alquilerLine){
+      cur.fax_meta.alquiler_coche_cents = eurFromTextToCents(alquilerLine[1]);
+      continue;
+    } 
     const totalPart = line.match(/^Total parte:\s*([\d.,]+)\s*€/i);
     if (totalPart){
       cur.total_cents = eurFromTextToCents(totalPart[1]);
