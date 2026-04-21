@@ -216,7 +216,15 @@ export async function dbAllDump(){
     meta: await dumpStore('meta')
   };
 }
-
+export async function dbInterventionDelete(uid){
+  await dbInit();
+  return await new Promise((resolve, reject)=>{
+    const store = tx('interventions', 'readwrite');
+    const req = store.delete(uid);
+    req.onsuccess = ()=> resolve(true);
+    req.onerror = ()=> reject(req.error);
+  });
+}
 export async function dbAllReplace(dump){
   await dbInit();
   // Clear and repopulate (V1 simple)
