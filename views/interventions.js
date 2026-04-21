@@ -1,4 +1,4 @@
-import { dbInterventionsSearch } from '../db.js';
+import { dbInterventionsSearch, dbInterventionDelete } from '../db.js';
 import { centsToEUR } from '../parser.js';
 
 export async function viewInterventions(root, { setStatus }){
@@ -29,7 +29,7 @@ export async function viewInterventions(root, { setStatus }){
 
       <section class="card">
         <table class="table">
-          <thead><tr><th>Fecha</th><th>Tipo</th><th>Cliente</th><th>Total</th><th>Techs</th><th>Fuentes</th><th>UID</th></tr></thead>
+<thead><tr><th>Fecha</th><th>Tipo</th><th>Cliente</th><th>Total</th><th>Techs</th><th>Fuentes</th><th>UID</th><th>Acciones</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
       </section>
@@ -48,7 +48,7 @@ export async function viewInterventions(root, { setStatus }){
 
     const list = await dbInterventionsSearch({ client, from, to, type });
 
-    rows.innerHTML = list.slice(0, 200).map(it=>`
+        rows.innerHTML = list.slice(0, 200).map(it=>`
       <tr>
         <td>${it.date}</td>
         <td>${it.type}</td>
@@ -57,8 +57,30 @@ export async function viewInterventions(root, { setStatus }){
         <td class="small">${(it.techs_in_part||[]).join(' + ') || '—'}</td>
         <td>${(it.sources||[]).length}</td>
         <td class="small">${it.uid}</td>
+        <td>
+          <button class="btn danger btn-del-int" data-uid="${it.uid}" type="button">Borrar</button>
+        </td>
       </tr>
     `).join('');
+
+        rows.querySelectorAll('.btn-del-int').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const uid = btn.dataset.uid;
+        if (!uid) return;
+
+        const ok = confirm(`¿Seguro que quieres borrar la intervención ${uid}? Esta acción la quitará de todos los informes y listados.`);
+        if (!ok) return;
+
+        try {
+          await dbInterventionDelete(uid);
+          await paint();
+          setStatus('Intervención borrada ✅', 'good');
+        } catch (e) {
+          console.error(e);
+          setStatus('Error al borrar la intervención', 'bad');
+        }
+      });
+    });
 
     setStatus(`Listo · ${list.length} resultado(s)`, 'good');
   }
