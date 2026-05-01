@@ -50,7 +50,37 @@ export async function viewInterventions(root, { setStatus }){
   <label>Nombre cliente</label>
   <input id="m_name" class="input" type="text">
 </div>
+<div class="hr"></div>
 
+<div class="field onecol">
+  <label>Horas base</label>
+  <input id="m_horas" class="input" type="number" step="0.1">
+</div>
+
+<div class="field onecol">
+  <label>Horas desplazamiento</label>
+  <input id="m_despl" class="input" type="number" step="0.1">
+</div>
+
+<div class="field onecol">
+  <label>Kilómetros</label>
+  <input id="m_km" class="input" type="number" step="1">
+</div>
+
+<div class="field onecol">
+  <label>Comida / Almuerzo</label>
+  <input id="m_comida" class="input" type="number" step="0.01">
+</div>
+
+<div class="field onecol">
+  <label>Cena</label>
+  <input id="m_cena" class="input" type="number" step="0.01">
+</div>
+
+<div class="field onecol">
+  <label>Material / Consumibles</label>
+  <input id="m_material" class="input" type="number" step="0.01">
+</div>
           <div style="display:flex; gap:8px; margin-top:12px;">
 <button id="m_save" class="btn primary" type="button">Guardar</button>
 <button id="m_cancel" class="btn" type="button">Cancelar</button>
@@ -68,20 +98,86 @@ const mCancel = root.querySelector('#m_cancel');
   const mDate = root.querySelector('#m_date');
 const mClient = root.querySelector('#m_client');
 const mName = root.querySelector('#m_name');
+ const mHoras = root.querySelector('#m_horas');
+const mDespl = root.querySelector('#m_despl');
+const mKm = root.querySelector('#m_km');
+const mComida = root.querySelector('#m_comida');
+const mCena = root.querySelector('#m_cena');
+const mMaterial = root.querySelector('#m_material');
   mCancel.addEventListener('click', () => {
   editModal.style.display = 'none';
 });
   mSave.addEventListener('click', async () => {
   if (!window.currentEdit) return;
 
-  const updated = {
-    ...window.currentEdit,
-    date: mDate.value,
-    client_id: mClient.value.trim(),
-    client_name: mName.value.trim(),
-    is_corrected: true,
-    corrected_at: new Date().toISOString()
-  };
+  const fm = window.currentEdit.fax_meta || {};
+const toNum = (v) => Number(String(v || '0').replace(',', '.')) || 0;
+const toCents = (v) => Math.round(toNum(v) * 100);
+
+const horas = toNum(mHoras.value);
+const despl = toNum(mDespl.value);
+const km = toNum(mKm.value);
+const comida = toCents(mComida.value);
+const cena = toCents(mCena.value);
+const material = toCents(mMaterial.value);
+
+const baseRate = Number(fm.horas_base_rate || (window.currentEdit.type === 'REPARACION' ? 32.14 : 27.95));
+const baseMult = Number(fm.horas_base_mult || (window.currentEdit.type === 'INSTALACION' ? 2 : 1));
+const desplRate = Number(fm.horas_despl_rate || 19.28);
+const desplMult = Number(fm.horas_despl_mult || (window.currentEdit.type === 'INSTALACION' ? 2 : 1));
+const kmRate = Number(fm.km_rate || 0.31);
+
+const baseTotal = Math.round(horas * baseRate * baseMult * 100);
+const desplTotal = Math.round(despl * desplRate * desplMult * 100);
+const kmTotal = Math.round(km * kmRate * 100);
+
+const oldFurgon = Number(fm.furgon_cents || 0);
+const oldBateria = Number(fm.bateria_cents || 0);
+const oldPilas = Number(fm.pilas_total_cents || 0);
+const oldParking = Number(fm.parking_cents || 0);
+const oldGasolina = Number(fm.gasolina_cents || 0);
+const oldAlquiler = Number(fm.alquiler_coche_cents || 0);
+const oldMantenimiento = Number(fm.mantenimiento_fijo_cents || 0);
+
+const newFaxMeta = {
+  ...fm,
+  horas_base_h: horas,
+  horas_base_total_cents: baseTotal,
+  horas_despl_h: despl,
+  horas_despl_total_cents: desplTotal,
+  km_units: km,
+  km_total_cents: kmTotal,
+  almuerzo_cents: comida,
+  comida_cents: 0,
+  cena_cents: cena,
+  material_cents: material
+};
+
+const newTotal =
+  baseTotal +
+  desplTotal +
+  kmTotal +
+  comida +
+  cena +
+  material +
+  oldFurgon +
+  oldBateria +
+  oldPilas +
+  oldParking +
+  oldGasolina +
+  oldAlquiler +
+  oldMantenimiento;
+
+const updated = {
+  ...window.currentEdit,
+  date: mDate.value,
+  client_id: mClient.value.trim(),
+  client_name: mName.value.trim(),
+  fax_meta: newFaxMeta,
+  total_cents: newTotal,
+  is_corrected: true,
+  corrected_at: new Date().toISOString()
+};
 
   try {
     await dbInterventionPut(updated);
@@ -143,9 +239,18 @@ rows.querySelectorAll('.btn-edit-int').forEach(btn => {
   window.currentEdit = it;
     if (!it) return;
 
+const fm = it.fax_meta || {};
+
 mDate.value = it.date || '';
 mClient.value = it.client_id || '';
 mName.value = it.client_name || '';
+
+mHoras.value = fm.horas_base_h ?? 0;
+mDespl.value = fm.horas_despl_h ?? 0;
+mKm.value = fm.km_units ?? 0;
+mComida.value = ((fm.almuerzo_cents || fm.comida_cents || 0) / 100).toFixed(2);
+mCena.value = ((fm.cena_cents || 0) / 100).toFixed(2);
+mMaterial.value = ((fm.material_cents || 0) / 100).toFixed(2);
 
 editModal.style.display = 'block';
   });
