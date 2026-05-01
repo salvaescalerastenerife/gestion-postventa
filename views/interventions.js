@@ -33,12 +33,26 @@ export async function viewInterventions(root, { setStatus }){
           <tbody id="rows"></tbody>
         </table>
       </section>
+            <div id="editModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9999; padding:16px;">
+        <div style="background:#2a1a0d; color:#fff4e8; max-width:420px; margin:40px auto; padding:16px; border-radius:16px; border:1px solid rgba(255,214,170,.14);">
+          <h3 style="margin-top:0;">Corregir intervención</h3>
+          <p class="small">Editor de prueba. En el siguiente paso conectamos los campos.</p>
+
+          <div style="display:flex; gap:8px; margin-top:12px;">
+            <button id="m_cancel" class="btn" type="button">Cerrar</button>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 
   const rows = root.querySelector('#rows');
   const run = root.querySelector('#run');
-
+const editModal = root.querySelector('#editModal');
+const mCancel = root.querySelector('#m_cancel');
+  mCancel.addEventListener('click', () => {
+  editModal.style.display = 'none';
+});
   async function paint(){
     setStatus('Buscando…');
     const client = root.querySelector('#client').value.trim() || null;
@@ -82,13 +96,15 @@ export async function viewInterventions(root, { setStatus }){
         }
       });
     });
-    rows.querySelectorAll('.btn-edit-int').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const uid = btn.dataset.uid;
-        const it = list.find(x => x.uid === uid);
-        if (!it) return;
+rows.querySelectorAll('.btn-edit-int').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const uid = btn.dataset.uid;
+    const it = list.find(x => x.uid === uid);
+    if (!it) return;
 
-        const newDate = prompt('Fecha de la intervención (YYYY-MM-DD):', it.date || '');
+    editModal.style.display = 'block';
+  });
+});
         if (newDate === null) return;
 
         const newClientId = prompt('Código de cliente:', it.client_id || '');
