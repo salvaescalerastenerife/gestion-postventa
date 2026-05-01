@@ -1,4 +1,4 @@
-import { dbInterventionsSearch, dbInterventionDelete } from '../db.js';
+import { dbInterventionsSearch, dbInterventionDelete, dbInterventionPut } from '../db.js';
 import { centsToEUR } from '../parser.js';
 
 export async function viewInterventions(root, { setStatus }){
