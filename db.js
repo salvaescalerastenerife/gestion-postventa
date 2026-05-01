@@ -248,7 +248,9 @@ export async function dbAllReplace(dump){
       store.transaction.onerror = ()=> reject(store.transaction.error);
     });
   }
-  export async function dbInterventionPut(item){
+}
+
+export async function dbInterventionPut(item){
   await dbInit();
   return await new Promise((resolve, reject)=>{
     const store = tx('interventions', 'readwrite');
@@ -256,5 +258,4 @@ export async function dbAllReplace(dump){
     req.onsuccess = ()=> resolve(true);
     req.onerror = ()=> reject(req.error);
   });
-}
 }
