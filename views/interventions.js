@@ -36,10 +36,24 @@ export async function viewInterventions(root, { setStatus }){
             <div id="editModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9999; padding:16px;">
         <div style="background:#2a1a0d; color:#fff4e8; max-width:420px; margin:40px auto; padding:16px; border-radius:16px; border:1px solid rgba(255,214,170,.14);">
           <h3 style="margin-top:0;">Corregir intervención</h3>
-          <p class="small">Editor de prueba. En el siguiente paso conectamos los campos.</p>
+<div class="field onecol">
+  <label>Fecha</label>
+  <input id="m_date" class="input" type="date">
+</div>
+
+<div class="field onecol">
+  <label>ID Cliente</label>
+  <input id="m_client" class="input" type="text">
+</div>
+
+<div class="field onecol">
+  <label>Nombre cliente</label>
+  <input id="m_name" class="input" type="text">
+</div>
 
           <div style="display:flex; gap:8px; margin-top:12px;">
-            <button id="m_cancel" class="btn" type="button">Cerrar</button>
+<button id="m_save" class="btn primary" type="button">Guardar</button>
+<button id="m_cancel" class="btn" type="button">Cancelar</button>
           </div>
         </div>
       </div>
@@ -50,8 +64,34 @@ export async function viewInterventions(root, { setStatus }){
   const run = root.querySelector('#run');
 const editModal = root.querySelector('#editModal');
 const mCancel = root.querySelector('#m_cancel');
+ const mSave = root.querySelector('#m_save');
+  const mDate = root.querySelector('#m_date');
+const mClient = root.querySelector('#m_client');
+const mName = root.querySelector('#m_name');
   mCancel.addEventListener('click', () => {
   editModal.style.display = 'none';
+});
+  mSave.addEventListener('click', async () => {
+  if (!window.currentEdit) return;
+
+  const updated = {
+    ...window.currentEdit,
+    date: mDate.value,
+    client_id: mClient.value.trim(),
+    client_name: mName.value.trim(),
+    is_corrected: true,
+    corrected_at: new Date().toISOString()
+  };
+
+  try {
+    await dbInterventionPut(updated);
+    editModal.style.display = 'none';
+    await paint();
+    setStatus('Intervención actualizada ✅', 'good');
+  } catch (e) {
+    console.error(e);
+    setStatus('Error al guardar', 'bad');
+  }
 });
   async function paint(){
     setStatus('Buscando…');
@@ -100,9 +140,14 @@ rows.querySelectorAll('.btn-edit-int').forEach(btn => {
   btn.addEventListener('click', async () => {
     const uid = btn.dataset.uid;
     const it = list.find(x => x.uid === uid);
+  window.currentEdit = it;
     if (!it) return;
 
-    editModal.style.display = 'block';
+mDate.value = it.date || '';
+mClient.value = it.client_id || '';
+mName.value = it.client_name || '';
+
+editModal.style.display = 'block';
   });
 });
     setStatus(`Listo · ${list.length} resultado(s)`, 'good');
