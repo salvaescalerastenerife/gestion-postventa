@@ -58,6 +58,7 @@ export async function viewInterventions(root, { setStatus }){
         <td>${(it.sources||[]).length}</td>
         <td class="small">${it.uid}</td>
         <td>
+        <button class="btn btn-edit-int" data-uid="${it.uid}" type="button">Corregir</button>
           <button class="btn danger btn-del-int" data-uid="${it.uid}" type="button">Borrar</button>
         </td>
       </tr>
