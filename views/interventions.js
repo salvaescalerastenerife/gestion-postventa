@@ -105,3 +105,9 @@ rows.querySelectorAll('.btn-edit-int').forEach(btn => {
     editModal.style.display = 'block';
   });
 });
+    setStatus(`Listo · ${list.length} resultado(s)`, 'good');
+  }
+
+  run.addEventListener('click', paint);
+  await paint();
+}
