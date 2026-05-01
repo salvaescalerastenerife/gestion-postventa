@@ -82,7 +82,50 @@ export async function viewInterventions(root, { setStatus }){
         }
       });
     });
+    rows.querySelectorAll('.btn-edit-int').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const uid = btn.dataset.uid;
+        const it = list.find(x => x.uid === uid);
+        if (!it) return;
 
+        const newDate = prompt('Fecha de la intervención (YYYY-MM-DD):', it.date || '');
+        if (newDate === null) return;
+
+        const newClientId = prompt('Código de cliente:', it.client_id || '');
+        if (newClientId === null) return;
+
+        const newClientName = prompt('Nombre cliente:', it.client_name || '');
+        if (newClientName === null) return;
+
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate.trim())) {
+          alert('La fecha debe tener formato YYYY-MM-DD');
+          return;
+        }
+
+        if (!String(newClientId).trim()) {
+          alert('El código de cliente no puede estar vacío.');
+          return;
+        }
+
+        const updated = {
+          ...it,
+          date: newDate.trim(),
+          client_id: String(newClientId).trim(),
+          client_name: String(newClientName || '').trim(),
+          corrected_at: new Date().toISOString(),
+          is_corrected: true
+        };
+
+        try {
+          await dbInterventionPut(updated);
+          await paint();
+          setStatus('Intervención corregida ✅', 'good');
+        } catch (e) {
+          console.error(e);
+          setStatus('Error al guardar corrección', 'bad');
+        }
+      });
+    });
     setStatus(`Listo · ${list.length} resultado(s)`, 'good');
   }
 
