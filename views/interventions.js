@@ -168,12 +168,24 @@ const newTotal =
   oldAlquiler +
   oldMantenimiento;
 
+const newBreakdown = {
+  ...(window.currentEdit.breakdown_cents || {}),
+
+  instalacion: baseTotal,
+  reparacion: baseTotal, // no pasa nada si no aplica
+  desplazamiento: desplTotal,
+  km: kmTotal,
+  comida: comida,
+  material: material,
+};
+
 const updated = {
   ...window.currentEdit,
   date: mDate.value,
   client_id: mClient.value.trim(),
   client_name: mName.value.trim(),
   fax_meta: newFaxMeta,
+  breakdown_cents: newBreakdown,
   total_cents: newTotal,
   is_corrected: true,
   corrected_at: new Date().toISOString()
