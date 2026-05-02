@@ -169,34 +169,44 @@ if (nameMatch){
       cur.fax_meta.km_total_cents = eurFromTextToCents(kmsLine[2]);
       continue;
     }
-        const almuerzoLine = line.match(/^Almuerzo:\s*([\d.,]+)\s*€/i);
-    if (almuerzoLine){
-      cur.fax_meta.almuerzo_cents = eurFromTextToCents(almuerzoLine[1]);
-      continue;
-    }
+const almuerzoLine = line.match(/^Almuerzo:\s*([\d.,]+)\s*€/i);
+if (almuerzoLine){
+  const cents = eurFromTextToCents(almuerzoLine[1]);
+  cur.fax_meta.almuerzo_cents = cents;
+  cur.breakdown_cents.comida = (cur.breakdown_cents.comida || 0) + cents;
+  continue;
+}
 
-    const cenaLine = line.match(/^Cena:\s*([\d.,]+)\s*€/i);
-    if (cenaLine){
-      cur.fax_meta.cena_cents = eurFromTextToCents(cenaLine[1]);
-      continue;
-    }
+const cenaLine = line.match(/^Cena:\s*([\d.,]+)\s*€/i);
+if (cenaLine){
+  const cents = eurFromTextToCents(cenaLine[1]);
+  cur.fax_meta.cena_cents = cents;
+  cur.breakdown_cents.comida = (cur.breakdown_cents.comida || 0) + cents;
+  continue;
+}
 
-    const comidaLine = line.match(/^Comida:\s*([\d.,]+)\s*€/i);
-    if (comidaLine){
-      cur.fax_meta.comida_cents = eurFromTextToCents(comidaLine[1]);
-      continue;
-    }
+const comidaLine = line.match(/^Comida:\s*([\d.,]+)\s*€/i);
+if (comidaLine){
+  const cents = eurFromTextToCents(comidaLine[1]);
+  cur.fax_meta.comida_cents = cents;
+  cur.breakdown_cents.comida = (cur.breakdown_cents.comida || 0) + cents;
+  continue;
+}
 
-    const materialLine = line.match(/^Material:\s*([\d.,]+)\s*€/i);
-    if (materialLine){
-      cur.fax_meta.material_cents = eurFromTextToCents(materialLine[1]);
-      continue;
-    }
-       const bateriaLine = line.match(/^Batería:\s*([\d.,]+)\s*€/i);
-    if (bateriaLine){
-      cur.fax_meta.bateria_cents = eurFromTextToCents(bateriaLine[1]);
-      continue;
-    }
+const materialLine = line.match(/^Material:\s*([\d.,]+)\s*€/i);
+if (materialLine){
+  const cents = eurFromTextToCents(materialLine[1]);
+  cur.fax_meta.material_cents = cents;
+  cur.breakdown_cents.material = cents;
+  continue;
+}
+const bateriaLine = line.match(/^Batería:\s*([\d.,]+)\s*€/i);
+if (bateriaLine){
+  const cents = eurFromTextToCents(bateriaLine[1]);
+  cur.fax_meta.bateria_cents = cents;
+  cur.breakdown_cents.bateria = cents;
+  continue;
+}
 
     const pilasLine = line.match(/^Pilas:\s*(\d+)\s*x\s*([\d.,]+)\s*€\s*=\s*([\d.,]+)\s*€/i);
     if (pilasLine){
@@ -206,11 +216,13 @@ if (nameMatch){
       continue;
     }
 
-    const furgonLine = line.match(/^Furgón:\s*([\d.,]+)\s*€/i);
-    if (furgonLine){
-      cur.fax_meta.furgon_cents = eurFromTextToCents(furgonLine[1]);
-      continue;
-    }
+const furgonLine = line.match(/^Furgón:\s*([\d.,]+)\s*€/i);
+if (furgonLine){
+  const cents = eurFromTextToCents(furgonLine[1]);
+  cur.fax_meta.furgon_cents = cents;
+  cur.breakdown_cents.furgon = cents;
+  continue;
+}
 
     const mantenimientoLine = line.match(/^Mantenimiento(?:\s*\(fijo\))?:\s*([\d.,]+)\s*€/i);
     if (mantenimientoLine){
