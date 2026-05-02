@@ -14,7 +14,7 @@ export async function viewExport(root, { state, setStatus }){
 
 <div class="row">
   <button class="btn primary" id="day">CSV del día seleccionado</button>
-
+<button class="btn btn-danger-special" id="repairTotals">⚠ Reparar totales</button>
   <label class="small">Desde</label>
   <input class="input" id="from" type="date" />
 
