@@ -471,4 +471,20 @@ a:hover{
   .tech-cal__count {
     font-size: 1.35rem;
   }
+  .btn-danger-special {
+  background: linear-gradient(135deg, #ff3b3b, #b30000);
+  color: white;
+  font-weight: bold;
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 4px 12px rgba(255,0,0,0.3);
+}
+
+.btn-danger-special:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.btn-danger-special:active {
+  transform: scale(0.98);
+}
 }
