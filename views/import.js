@@ -210,12 +210,13 @@ export async function viewImport(root, { state, setStatus }){
           const already = sources.some(s => s.import_id === import_id);
           if (!already) sources.push(source);
 
-          interventionsToUpsert.push({
-            ...existing,
-            client_name: p.client_name || existing.client_name || '',
-            fax_meta: p.fax_meta || existing.fax_meta || {},
-            sources
-          });
+interventionsToUpsert.push({
+  ...existing,
+  client_name: p.client_name || existing.client_name || '',
+  breakdown_cents: p.breakdown_cents || existing.breakdown_cents || {},
+  fax_meta: p.fax_meta || existing.fax_meta || {},
+  sources
+});
         }
       }
     }
