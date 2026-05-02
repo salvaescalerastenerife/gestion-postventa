@@ -1,4 +1,4 @@
-import { dbInterventionsSearch, dbInterventionsListByDate } from '../db.js';
+import { dbInterventionsSearch, dbInterventionsListByDate, dbInterventionsPutMany } from '../db.js';
 import { interventionsToCSV, downloadTextFile } from '../csv.js';
 import { buildFaxMonthlyText } from '../fax-report.js';
 
@@ -162,5 +162,76 @@ let y = 35;
 
   setStatus('Documento generado ✅', 'good');
 });
-  setStatus('Listo', 'good');
+
+// 🔴 BOTÓN REPARAR TOTALES (AQUÍ)
+root.querySelector('#repairTotals').addEventListener('click', async () => {
+  const ok = confirm('⚠ Esto recalculará todos los totales desde los datos internos. ¿Continuar?');
+  if (!ok) return;
+
+  setStatus('Reparando totales…');
+
+  const rows = await dbInterventionsSearch({});
+
+  const fixed = rows.map(it => {
+    const fm = it.fax_meta || {};
+
+    const base = Number(fm.horas_base_total_cents || 0);
+    const despl = Number(fm.horas_despl_total_cents || 0);
+    const km = Number(fm.km_total_cents || 0);
+    const comida = Number(fm.almuerzo_cents || fm.comida_cents || 0);
+    const cena = Number(fm.cena_cents || 0);
+    const material = Number(fm.material_cents || 0);
+
+    const bateria = Number(fm.bateria_cents || 0);
+    const furgon = Number(fm.furgon_cents || 0);
+    const pilas = Number(fm.pilas_total_cents || 0);
+    const parking = Number(fm.parking_cents || 0);
+    const gasolina = Number(fm.gasolina_cents || 0);
+    const alquiler = Number(fm.alquiler_coche_cents || 0);
+    const fijo = Number(fm.mantenimiento_fijo_cents || 0);
+
+    const type = it.type;
+
+    const breakdown = {
+      instalacion: type === 'INSTALACION' ? base : 0,
+      reparacion: type === 'REPARACION' ? base : 0,
+      fijo: type === 'MANTENIMIENTO' ? base : 0,
+
+      desplazamiento: despl,
+      km: km,
+      comida: comida + cena,
+      material: material,
+      bateria: bateria,
+      furgon: furgon,
+      fijo_extra: fijo
+    };
+
+    const total =
+      base +
+      despl +
+      km +
+      comida +
+      cena +
+      material +
+      bateria +
+      furgon +
+      pilas +
+      parking +
+      gasolina +
+      alquiler +
+      fijo;
+
+    return {
+      ...it,
+      breakdown_cents: breakdown,
+      total_cents: total
+    };
+  });
+
+  await dbInterventionsPutMany(fixed);
+
+  setStatus('Totales reparados correctamente ✅', 'good');
+});
+
+setStatus('Listo', 'good');
 }
