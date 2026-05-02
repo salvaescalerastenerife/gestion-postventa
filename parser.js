@@ -130,45 +130,54 @@ if (nameMatch){
   cur.client_name = nameMatch[1].trim();
   continue;
 }
-    const horasBase = line.match(/^(Instalación|Reparación|Mantenimiento(?:\s*\(fijo\))?):\s*([\d.,]+)(?:\s*h)?(?:\s*x(\d+))?\s*=\s*([\d.,]+)\s*€/i);
-    if (horasBase){
-      cur.fax_meta.horas_base_label = horasBase[1].trim();
-      cur.fax_meta.horas_base_h = eurFromTextToCents(horasBase[2]) / 100;
-      cur.fax_meta.horas_base_mult = horasBase[3] ? Number(horasBase[3]) : null;
-      cur.fax_meta.horas_base_total_cents = eurFromTextToCents(horasBase[4]);
+const horasBase = line.match(/^(Instalación|Reparación|Mantenimiento(?:\s*\(fijo\))?):\s*([\d.,]+)(?:\s*h)?(?:\s*x(\d+))?\s*=\s*([\d.,]+)\s*€/i);
+if (horasBase){
+  const totalCents = eurFromTextToCents(horasBase[4]);
 
-      const labelLc = horasBase[1].toLowerCase();
-      if (labelLc.includes('mantenimiento')) {
-        cur.fax_meta.horas_base_rate = null;
-      } else if (labelLc.includes('instal')) {
-        cur.fax_meta.horas_base_rate = 27.95;
-      } else if (labelLc.includes('repar')) {
-        cur.fax_meta.horas_base_rate = 32.14;
-      }
+  cur.fax_meta.horas_base_label = horasBase[1].trim();
+  cur.fax_meta.horas_base_h = eurFromTextToCents(horasBase[2]) / 100;
+  cur.fax_meta.horas_base_mult = horasBase[3] ? Number(horasBase[3]) : null;
+  cur.fax_meta.horas_base_total_cents = totalCents;
 
-      continue;
-    }
-        const horasDespl = line.match(/^Desplazamiento:\s*([\d.,]+)\s*h(?:\s*x(\d+))?\s*=\s*([\d.,]+)\s*€/i);
-    if (horasDespl){
-      cur.fax_meta.horas_despl_h = eurFromTextToCents(horasDespl[1]) / 100;
-      cur.fax_meta.horas_despl_mult = horasDespl[2] ? Number(horasDespl[2]) : null;
-      cur.fax_meta.horas_despl_total_cents = eurFromTextToCents(horasDespl[3]);
+  const labelLc = horasBase[1].toLowerCase();
+  if (labelLc.includes('mantenimiento')) {
+    cur.fax_meta.horas_base_rate = null;
+    cur.breakdown_cents.fijo = totalCents;
+  } else if (labelLc.includes('instal')) {
+    cur.fax_meta.horas_base_rate = 27.95;
+    cur.breakdown_cents.instalacion = totalCents;
+  } else if (labelLc.includes('repar')) {
+    cur.fax_meta.horas_base_rate = 32.14;
+    cur.breakdown_cents.reparacion = totalCents;
+  }
 
-      if (cur.type === 'INSTALACION') {
-        cur.fax_meta.horas_despl_rate = 19.28;
-      } else {
-        cur.fax_meta.horas_despl_rate = 19.28;
-      }
+  continue;
+}
+const horasDespl = line.match(/^Desplazamiento:\s*([\d.,]+)\s*h(?:\s*x(\d+))?\s*=\s*([\d.,]+)\s*€/i);
+if (horasDespl){
+  const totalCents = eurFromTextToCents(horasDespl[3]);
 
-      continue;
-    }
-        const kmsLine = line.match(/^Kilómetros:\s*([\d.,]+)\s*=\s*([\d.,]+)\s*€/i);
-    if (kmsLine){
-      cur.fax_meta.km_units = eurFromTextToCents(kmsLine[1]) / 100;
-      cur.fax_meta.km_rate = 0.31;
-      cur.fax_meta.km_total_cents = eurFromTextToCents(kmsLine[2]);
-      continue;
-    }
+  cur.fax_meta.horas_despl_h = eurFromTextToCents(horasDespl[1]) / 100;
+  cur.fax_meta.horas_despl_mult = horasDespl[2] ? Number(horasDespl[2]) : null;
+  cur.fax_meta.horas_despl_total_cents = totalCents;
+  cur.fax_meta.horas_despl_rate = 19.28;
+
+  cur.breakdown_cents.desplazamiento = totalCents;
+
+  continue;
+}
+const kmsLine = line.match(/^Kilómetros:\s*([\d.,]+)\s*=\s*([\d.,]+)\s*€/i);
+if (kmsLine){
+  const totalCents = eurFromTextToCents(kmsLine[2]);
+
+  cur.fax_meta.km_units = eurFromTextToCents(kmsLine[1]) / 100;
+  cur.fax_meta.km_rate = 0.31;
+  cur.fax_meta.km_total_cents = totalCents;
+
+  cur.breakdown_cents.km = totalCents;
+
+  continue;
+}
 const almuerzoLine = line.match(/^Almuerzo:\s*([\d.,]+)\s*€/i);
 if (almuerzoLine){
   const cents = eurFromTextToCents(almuerzoLine[1]);
