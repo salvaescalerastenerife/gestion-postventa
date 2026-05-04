@@ -55,8 +55,23 @@ export function parseClosureText(text, filename='(pdf)'){
   const parts = [];
   let cur = null;
 
-  const pushCur = ()=>{
-    if (!cur) return;
+const pushCur = ()=>{
+  if (!cur) return;
+
+  // ❌ Ignorar partes basura (solo furgón + total)
+  const hasOnlyFurgon =
+    Object.keys(cur.breakdown_cents || {}).length <= 1 &&
+    cur.breakdown_cents?.furgon;
+
+  const hasNoWork =
+    !cur.fax_meta?.horas_base_total_cents &&
+    !cur.fax_meta?.horas_despl_total_cents &&
+    !cur.fax_meta?.km_total_cents;
+
+  if (hasOnlyFurgon || hasNoWork) {
+    cur = null;
+    return;
+  }
     // Require minimum fields
     if (!cur.type) errors.push(`Parte sin tipo (${filename}).`);
     if (!cur.client_id) errors.push(`Parte sin cliente (${filename}).`);
