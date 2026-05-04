@@ -174,7 +174,21 @@ root.querySelector('#repairTotals').addEventListener('click', async () => {
 
   const fixed = rows.map(it => {
     const fm = it.fax_meta || {};
+const hasUsefulFaxMeta =
+  Number(fm.horas_base_total_cents || 0) > 0 ||
+  Number(fm.horas_despl_total_cents || 0) > 0 ||
+  Number(fm.km_total_cents || 0) > 0 ||
+  Number(fm.almuerzo_cents || 0) > 0 ||
+  Number(fm.comida_cents || 0) > 0 ||
+  Number(fm.cena_cents || 0) > 0 ||
+  Number(fm.material_cents || 0) > 0 ||
+  Number(fm.bateria_cents || 0) > 0 ||
+  Number(fm.furgon_cents || 0) > 0 ||
+  Number(fm.mantenimiento_fijo_cents || 0) > 0;
 
+if (!hasUsefulFaxMeta) {
+  return it;
+}
     const base = Number(fm.horas_base_total_cents || 0);
     const despl = Number(fm.horas_despl_total_cents || 0);
     const km = Number(fm.km_total_cents || 0);
