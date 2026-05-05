@@ -259,3 +259,16 @@ export async function dbInterventionPut(item){
     req.onerror = ()=> reject(req.error);
   });
 }
+export async function dbInterventionsDeleteMany(uids){
+  await dbInit();
+  return await new Promise((resolve, reject)=>{
+    const store = tx('interventions', 'readwrite');
+
+    for (const uid of uids) {
+      store.delete(uid);
+    }
+
+    store.transaction.oncomplete = ()=> resolve(true);
+    store.transaction.onerror = ()=> reject(store.transaction.error);
+  });
+}
