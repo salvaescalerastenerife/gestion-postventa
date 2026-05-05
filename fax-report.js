@@ -207,6 +207,46 @@ function buildMantenimientoBlock(it) {
   out.push('');
   return out.join('\n');
 }
+function hasUsefulDetail(it) {
+  const fm = it?.fax_meta || {};
+  return (
+    Number(fm.horas_base_total_cents || 0) > 0 ||
+    Number(fm.horas_despl_total_cents || 0) > 0 ||
+    Number(fm.km_total_cents || 0) > 0 ||
+    Number(fm.almuerzo_cents || 0) > 0 ||
+    Number(fm.comida_cents || 0) > 0 ||
+    Number(fm.cena_cents || 0) > 0 ||
+    Number(fm.material_cents || 0) > 0 ||
+    Number(fm.bateria_cents || 0) > 0 ||
+    Number(fm.mantenimiento_fijo_cents || 0) > 0
+  );
+}
+
+function removeFaxDuplicateSummaries(rows) {
+  const best = new Map();
+
+  for (const it of rows) {
+    const key = [
+      it.date || '',
+      it.type || '',
+      it.client_id || '',
+      Number(it.total_cents || 0)
+    ].join('|');
+
+    const prev = best.get(key);
+
+    if (!prev) {
+      best.set(key, it);
+      continue;
+    }
+
+    if (!hasUsefulDetail(prev) && hasUsefulDetail(it)) {
+      best.set(key, it);
+    }
+  }
+
+  return Array.from(best.values());
+}
 export function buildFaxMonthlyText(rows, { year, month }) {
   const month0 = Number(month) - 1;
   const introMonth = `${monthNameEs(month0)} ${year}`;
