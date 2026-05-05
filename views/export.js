@@ -1,4 +1,4 @@
-import { dbInterventionsSearch, dbInterventionsListByDate, dbInterventionsPutMany } from '../db.js';
+import { dbInterventionsSearch, dbInterventionsListByDate, dbInterventionsPutMany, dbInterventionsDeleteMany } from '../db.js';
 import { interventionsToCSV, downloadTextFile } from '../csv.js';
 import { buildFaxMonthlyText } from '../fax-report.js';
 
@@ -15,6 +15,7 @@ export async function viewExport(root, { state, setStatus }){
 <div class="row">
   <button class="btn primary" id="day">CSV del día seleccionado</button>
 <button class="btn btn-danger-special" id="repairTotals">⚠ Reparar totales</button>
+<button class="btn btn-danger-special" id="cleanDuplicates">🧹 Limpiar duplicados</button>
   <label class="small">Desde</label>
   <input class="input" id="from" type="date" />
 
@@ -246,6 +247,86 @@ if (!hasUsefulFaxMeta) {
 
   setStatus('Totales reparados correctamente ✅', 'good');
 });
+root.querySelector('#cleanDuplicates').addEventListener('click', async () => {
+  const ok = confirm('⚠ Esto eliminará duplicados incompletos y conservará la versión con más detalle. ¿Continuar?');
+  if (!ok) return;
 
+  setStatus('Buscando duplicados…');
+
+  const rows = await dbInterventionsSearch({});
+  const groups = new Map();
+
+  const detailScore = (it) => {
+    const fm = it.fax_meta || {};
+    const bd = it.breakdown_cents || {};
+
+    return [
+      fm.horas_base_total_cents,
+      fm.horas_despl_total_cents,
+      fm.km_total_cents,
+      fm.almuerzo_cents,
+      fm.comida_cents,
+      fm.cena_cents,
+      fm.material_cents,
+      fm.bateria_cents,
+      fm.mantenimiento_fijo_cents,
+      bd.instalacion,
+      bd.reparacion,
+      bd.desplazamiento,
+      bd.km,
+      bd.comida,
+      bd.material,
+      bd.bateria,
+      bd.fijo
+    ].filter(v => Number(v || 0) > 0).length;
+  };
+
+  for (const it of rows) {
+    const key = [
+      it.date || '',
+      it.type || '',
+      it.client_id || '',
+      Number(it.total_cents || 0)
+    ].join('|');
+
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(it);
+  }
+
+  const uidsToDelete = [];
+
+  for (const group of groups.values()) {
+    if (group.length <= 1) continue;
+
+    const sorted = group
+      .slice()
+      .sort((a, b) => detailScore(b) - detailScore(a));
+
+    const keep = sorted[0];
+
+    for (const item of sorted.slice(1)) {
+      uidsToDelete.push(item.uid);
+    }
+
+    console.log('Duplicado conservado:', keep.uid, 'Borrados:', sorted.slice(1).map(x => x.uid));
+  }
+
+  if (!uidsToDelete.length) {
+    setStatus('No se encontraron duplicados ✅', 'good');
+    alert('No se encontraron duplicados.');
+    return;
+  }
+
+  const ok2 = confirm(`Se van a borrar ${uidsToDelete.length} duplicados. ¿Seguro?`);
+  if (!ok2) {
+    setStatus('Limpieza cancelada', 'warn');
+    return;
+  }
+
+  await dbInterventionsDeleteMany(uidsToDelete);
+
+  setStatus(`Duplicados eliminados ✅ ${uidsToDelete.length}`, 'good');
+  alert(`Duplicados eliminados: ${uidsToDelete.length}`);
+});
 setStatus('Listo', 'good');
 }
