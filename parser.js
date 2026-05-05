@@ -314,8 +314,9 @@ if (furgonLine){
 
   // Compute UID (fingerprint)
   for (const p of parts){
-const base = `${p.date}|${p.type}|${p.client_id}|${p.total_cents}`;
-p.uid = fnv1a(base);
+    const base = `${p.date}|${p.type}|${p.client_id}|${p.total_cents}`;
+    p.uid = fnv1a(base);
+  }
 
   return {
     header: { tech, date, total_pdf_cents, filename },
