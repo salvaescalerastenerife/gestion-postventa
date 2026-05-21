@@ -1,0 +1,10 @@
+{
+  "name": "Gestión Postventa",
+  "short_name": "Postventa",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#f97316",
+  "description": "Backoffice local de gestión postventa"
+}
