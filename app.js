@@ -1,3 +1,4 @@
+import { APP_VERSION, APP_BUILD } from './version.js';
 import { dbInit, dbMetaGet, dbMetaSet } from './db.js';
 import { viewDashboard } from './views/dashboard.js';
 import { viewImport } from './views/import.js';
@@ -55,7 +56,7 @@ async function boot(){
   const lastDay = await dbMetaGet('last_selected_date');
   if (lastDay) state.selectedDate = lastDay;
 
-  footerEl.textContent = 'IndexedDB local · Safari OK · Sin backend';
+footerEl.textContent = `v${APP_VERSION} · ${APP_BUILD} · IndexedDB local · Safari OK · Sin backend`;
   setStatus('Listo', 'good');
 
   // Tabs
@@ -80,5 +81,43 @@ async function renderFromHash(){
   appEl.innerHTML = '';
   await view(appEl, { state, setStatus, dbMetaSet });
 }
+async function registerServiceWorker(){
+  if (!('serviceWorker' in navigator)) return;
 
+  let refreshing = false;
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+
+  try {
+    const registration = await navigator.serviceWorker.register('./sw.js');
+
+    await registration.update();
+
+    if (registration.waiting) {
+      setStatus('Actualizando app…', 'warn');
+      registration.waiting.postMessage('SKIP_WAITING');
+      return;
+    }
+
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing;
+      if (!newWorker) return;
+
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          setStatus('Actualizando app…', 'warn');
+          newWorker.postMessage('SKIP_WAITING');
+        }
+      });
+    });
+  } catch (err) {
+    console.warn('Service Worker no registrado:', err);
+  }
+}
+
+registerServiceWorker();
 boot();
