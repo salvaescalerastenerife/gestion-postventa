@@ -63,10 +63,12 @@ const pushCur = ()=>{
     Object.keys(cur.breakdown_cents || {}).length <= 1 &&
     cur.breakdown_cents?.furgon;
 
-  const hasNoWork =
-    !cur.fax_meta?.horas_base_total_cents &&
-    !cur.fax_meta?.horas_despl_total_cents &&
-    !cur.fax_meta?.km_total_cents;
+const hasNoWork =
+  !cur.fax_meta?.horas_base_total_cents &&
+  !cur.fax_meta?.horas_despl_total_cents &&
+  !cur.fax_meta?.km_total_cents &&
+  !cur.fax_meta?.mantenimiento_fijo_cents &&
+  !cur.total_cents;
 
   if (hasOnlyFurgon || hasNoWork) {
     cur = null;
@@ -248,11 +250,18 @@ if (furgonLine){
   continue;
 }
 
-    const mantenimientoLine = line.match(/^Mantenimiento(?:\s*\(fijo\))?:\s*([\d.,]+)\s*€/i);
-    if (mantenimientoLine){
-      cur.fax_meta.mantenimiento_fijo_cents = eurFromTextToCents(mantenimientoLine[1]);
-      continue;
-    }
+const mantenimientoLine = line.match(/^Mantenimiento(?:\s*\(fijo\))?:\s*([\d.,]+)\s*€/i);
+if (mantenimientoLine){
+  const cents = eurFromTextToCents(mantenimientoLine[1]);
+
+  cur.fax_meta.mantenimiento_fijo_cents = cents;
+  cur.fax_meta.horas_base_total_cents = cur.fax_meta.horas_base_total_cents || cents;
+  cur.fax_meta.horas_base_label = cur.fax_meta.horas_base_label || 'Mantenimiento';
+
+  cur.breakdown_cents.fijo = cents;
+
+  continue;
+}
 
     const parkingLine = line.match(/^Parking:\s*([\d.,]+)\s*€/i);
     if (parkingLine){
